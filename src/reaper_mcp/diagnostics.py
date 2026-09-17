@@ -1,5 +1,6 @@
 """Read-only diagnostics; never report readiness from process health alone."""
 
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -50,3 +51,23 @@ async def diagnose() -> dict[str, Any]:
         "protocol_version": PROTOCOL_VERSION,
         "checks": checks,
     }
+
+
+async def version_report() -> dict[str, Any]:
+    report: dict[str, Any] = {
+        "server": __version__,
+        "protocol": PROTOCOL_VERSION,
+        "runtime": sys.version.split()[0],
+        "extension": None,
+        "reaper": None,
+    }
+    try:
+        info = await BridgeClient(timeout=0.5).call("bridge.info")
+        report["extension"] = info.get("extension_version")
+        report["reaper"] = info.get("reaper_version")
+        report["bridge_status"] = "connected"
+    except (BridgeError, OSError) as exc:
+        report["bridge_status"] = (
+            exc.code if isinstance(exc, BridgeError) else "FILE_OPERATION_FAILED"
+        )
+    return report
