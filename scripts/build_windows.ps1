@@ -19,6 +19,7 @@ python scripts/smoke_bundle.py dist/reaper-mcp/reaper-mcp.exe dist/release/reape
 if ($LASTEXITCODE) { throw 'Setup install/uninstall smoke failed' }
 Compress-Archive -Path dist/reaper-mcp -DestinationPath dist/release/reaper-mcp-0.1.0-alpha.1-windows-x64.zip -Force
 Copy-Item dist/native/reaper_mcp.dll dist/release/reaper_mcp.dll
+Get-Content dist/native/licenses/REAPER-SDK.txt, dist/native/licenses/nlohmann-json.txt | Set-Content dist/release/NATIVE-LICENSES.txt
 python -m build
 if ($LASTEXITCODE) { throw 'Python distribution build failed' }
 Copy-Item dist/*.whl dist/release/
