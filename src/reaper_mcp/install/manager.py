@@ -120,7 +120,7 @@ def verify_owned(record: InstallRecord) -> None:
             raise BridgeError("MODIFIED_FILE", f"Preserving a modified file: {path}")
 
 
-def install_files(
+def _install_files(
     executable: Path,
     resource: Path,
     extension: Path,
@@ -210,7 +210,7 @@ def install(
     return install_files(executable, resource, extension or bundled_extension(), policy)
 
 
-def uninstall_files(home: Path | None = None) -> bool:
+def _uninstall_files(home: Path | None = None) -> bool:
     home = home or data_dir()
     record = load_record(home)
     if record is None:
@@ -219,6 +219,9 @@ def uninstall_files(home: Path | None = None) -> bool:
     private = Path(record.resource_dir) / "ReaperMCP"
     private.mkdir(exist_ok=True)
     with instance_guard(private):
+        from reaper_mcp.install.codex import unregister
+
+        unregister(record)
         for filename in record.files:
             Path(filename).unlink(missing_ok=True)
         (private / "bridge.json").unlink(missing_ok=True)
@@ -226,3 +229,24 @@ def uninstall_files(home: Path | None = None) -> bool:
     (private / "instance.lock").unlink(missing_ok=True)
     # Do not recursively remove directories: they may contain user files or renders.
     return True
+
+
+def install_files(
+    executable: Path,
+    resource: Path,
+    extension: Path,
+    policy: Policy | None = None,
+    home: Path | None = None,
+) -> InstallRecord:
+    home = home or data_dir()
+    secure_directory(home)
+    with instance_guard(home):
+        return _install_files(executable, resource, extension, policy, home)
+
+
+def uninstall_files(home: Path | None = None) -> bool:
+    home = home or data_dir()
+    if not home.exists():
+        return False
+    with instance_guard(home):
+        return _uninstall_files(home)

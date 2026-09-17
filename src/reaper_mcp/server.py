@@ -1,10 +1,12 @@
 """Official MCP SDK entry point. Stdout is reserved for MCP messages."""
 
 from mcp.server import MCPServer
+from pydantic import ValidationError
 
 from reaper_mcp import PROTOCOL_VERSION, __version__
 from reaper_mcp.bridge.client import BridgeClient
-from reaper_mcp.config import Policy
+from reaper_mcp.bridge.errors import BridgeError
+from reaper_mcp.config import BridgeConfig, Policy, resource_dir
 from reaper_mcp.tools.automation import SPECS as AUTOMATION_SPECS
 from reaper_mcp.tools.common import Bridge, register
 from reaper_mcp.tools.environment import SPECS as ENVIRONMENT_SPECS
@@ -55,4 +57,14 @@ def create_server(
 
 
 def serve() -> None:
-    create_server().run()
+    policy: Policy = "confirm-destructive"
+    try:
+        config = resource_dir() / "ReaperMCP" / "config.json"
+        if config.exists():
+            policy = BridgeConfig.model_validate_json(config.read_bytes()).policy
+    except BridgeError as exc:
+        if exc.code != "NOT_INSTALLED":
+            raise
+    except (OSError, ValidationError) as exc:
+        raise BridgeError("INVALID_CONFIGURATION", "Run reaper-mcp doctor.") from exc
+    create_server(policy=policy).run()

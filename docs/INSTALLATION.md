@@ -46,3 +46,30 @@ only to the current user and SYSTEM; installation fails if this cannot be set.
 The installer is per-user and does not require administrator rights for normal
 REAPER resource directories. A portable copy in a protected system directory
 must be moved to a writable location or installed with suitable permissions.
+
+## Codex registration and diagnosis
+
+`install` now registers `reaper-mcp` through the official `codex mcp add`
+command. Codex CLI must be on PATH. Use `--skip-codex` for another MCP client.
+No TOML is rewritten by this project. An existing entry is preserved unless it
+exactly matches the registration recorded by this installer. Reinstallation is
+idempotent. Uninstallation removes only the matching owned entry; a changed
+entry stops removal and explains the conflict. If registration fails, native
+files remain installed and rerunning `install` after resolving the cause repairs
+registration. Do not delete an unrelated entry to resolve a name conflict.
+
+Run `reaper-mcp doctor` (or `status`) after opening REAPER. `--json` produces
+machine-readable checks. Exit status 0 requires installed managed files, the
+owned Codex registration, and an authenticated, protocol-compatible native bridge.
+A successful `version` or MCP `reaper_ping` alone does not establish REAPER readiness.
+`--skip-codex` installations report the absent Codex integration explicitly.
+
+Official CLI: <https://developers.openai.com/codex/mcp>.
+
+`logs` displays bounded local JSON diagnostic events (CLI error codes only),
+without request parameters or tokens. Files rotate at 1 MB under the private
+installation directory. MCP protocol output remains on stdout and SDK diagnostics
+on stderr. `update` prints the release download location; automatic downloading
+and unattended replacement are not implemented. Close REAPER and rerun a newer
+installer to update. The server reads the installed security policy at startup;
+restart the MCP process after changing policy. Native enforcement is independent.
