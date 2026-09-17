@@ -34,3 +34,14 @@ delta in dB, e.g. -3. Relative changes from silence are rejected. Pan ranges
 from -100 (left) to +100 (right). All changes use native Undo blocks. Track
 creation appends to the active project. Deletion requires confirmation.
 The master track is not included. Lists have a 2000-track safety ceiling.
+
+## Media items
+
+Implemented: paginated list/get, split/move/trim/delete, volume, fade-in/out.
+Times are absolute project seconds except fade durations. Trim keeps only the
+specified interval; it uses REAPER's native split operation, preserving MIDI,
+source offsets and take playback-rate handling. Trimming the start changes the
+retained GUID: always use the returned value. Locked items are rejected. Source
+files are never deleted. Trim and delete require confirmation. Fade tools set
+manual fades and disable the respective auto-fade. Partial host failures are
+reported with an instruction to inspect or Undo; no fake atomic rollback.

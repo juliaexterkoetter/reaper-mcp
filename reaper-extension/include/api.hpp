@@ -24,4 +24,12 @@
 #define REAPERAPI_WANT_InsertTrackAtIndex
 #define REAPERAPI_WANT_DeleteTrack
 #define REAPERAPI_WANT_TrackList_AdjustWindows
+#define REAPERAPI_WANT_CountMediaItems
+#define REAPERAPI_WANT_GetMediaItem
+#define REAPERAPI_WANT_GetSetMediaItemInfo_String
+#define REAPERAPI_WANT_GetMediaItemInfo_Value
+#define REAPERAPI_WANT_GetMediaItemTrack
+#define REAPERAPI_WANT_SetMediaItemInfo_Value
+#define REAPERAPI_WANT_DeleteTrackMediaItem
+#define REAPERAPI_WANT_SplitMediaItem
 #include "reaper_plugin_functions.h"

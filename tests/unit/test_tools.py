@@ -63,3 +63,20 @@ async def test_relative_volume_forwarded():
         {"params": {"project_id": "1", "track": "Voz", "volume_db": -3.0, "relative": True}},
     )
     assert bridge.calls[0][1]["relative"] is True
+
+
+async def test_item_trim_requires_approval():
+    bridge = RecordingBridge()
+    with pytest.raises(ToolError, match="CONFIRMATION_REQUIRED"):
+        await create_server(bridge).call_tool(
+            "reaper_trim_item",
+            {
+                "params": {
+                    "project_id": "1",
+                    "item": "{A}",
+                    "start_seconds": 5.0,
+                    "end_seconds": 10.0,
+                }
+            },
+        )
+    assert not bridge.calls
