@@ -15,6 +15,8 @@ def main() -> None:
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("serve")
     commands.add_parser("version")
+    commands.add_parser("logs")
+    commands.add_parser("update")
     for name in ("doctor", "status"):
         commands.add_parser(name).add_argument("--json", action="store_true")
     setup = commands.add_parser("install")
@@ -43,6 +45,19 @@ def main() -> None:
             from reaper_mcp.install.manager import uninstall_files
 
             print("[OK] Integration removed." if uninstall_files() else "[OK] Not installed.")
+        elif args.command == "logs":
+            from reaper_mcp.config import data_dir
+
+            path = data_dir() / "events.jsonl"
+            print(
+                path.read_text(encoding="utf-8")
+                if path.exists()
+                else "No diagnostic events recorded.",
+                end="\n",
+            )
+        elif args.command == "update":
+            print("Download and run the newer Windows installer after closing REAPER:")
+            print("https://github.com/juliaexterkoetter/reaper-mcp/releases")
         elif args.command in {"doctor", "status"}:
             from reaper_mcp.diagnostics import diagnose
 
@@ -65,6 +80,9 @@ def main() -> None:
                 )
             )
     except BridgeError as exc:
+        from reaper_mcp.logging_setup import event
+
+        event("cli", exc.code)
         print(f"[ERROR] {exc}", file=sys.stderr)
         raise SystemExit(1) from None
     except OSError as exc:
