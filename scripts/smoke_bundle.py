@@ -3,6 +3,7 @@
 import asyncio
 import json
 import os
+import shutil
 import struct
 import subprocess
 import sys
@@ -26,11 +27,20 @@ async def smoke(executable: Path) -> None:
         struct.pack_into("<H", header, 68, 0x8664)
         (resource / "reaper.exe").write_bytes(header)
         env = {**os.environ, "LOCALAPPDATA": str(root / "local"), "CODEX_HOME": str(root / "codex")}
+        # Exercise the frozen app without source-tree imports or Python on PATH.
+        for key in ("PYTHONPATH", "PYTHONHOME"):
+            env.pop(key, None)
+        allowed = [str(Path(os.environ["SystemRoot"]) / "System32"), os.environ["SystemRoot"]]
+        for command in ("codex", "node"):
+            resolved = shutil.which(command)
+            assert resolved, f"CI prerequisite missing: {command}"
+            allowed.append(str(Path(resolved).parent))
+        env["PATH"] = os.pathsep.join(dict.fromkeys(allowed))
         Path(env["CODEX_HOME"]).mkdir()
 
         def run(*args: str, expected: int = 0) -> str:
             result = subprocess.run(
-                [str(executable), *args], env=env, capture_output=True, text=True
+                [str(executable), *args], env=env, cwd=root, capture_output=True, text=True
             )
             assert result.returncode == expected, (result.stdout, result.stderr)
             return result.stdout
@@ -43,7 +53,7 @@ async def smoke(executable: Path) -> None:
         assert not report["ready"]
         assert report["checks"][1]["ok"], report
         async with stdio_client(
-            StdioServerParameters(command=str(executable), args=["serve"], env=env)
+            StdioServerParameters(command=str(executable), args=["serve"], env=env, cwd=str(root))
         ) as (reader, writer):
             async with ClientSession(reader, writer) as session:
                 await session.initialize()
