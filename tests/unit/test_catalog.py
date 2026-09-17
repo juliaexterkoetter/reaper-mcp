@@ -20,6 +20,8 @@ EXAMPLE = {
     "normalized_value": 0.5,
     "guid": "{MARKER}",
     "confirm": True,
+    "sample_rate": 48000,
+    "channels": 2,
     "envelope": "{ENV}",
     "time_seconds": 1.0,
     "value": -3.0,

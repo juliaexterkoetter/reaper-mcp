@@ -80,4 +80,8 @@
 #define REAPERAPI_WANT_InsertEnvelopePoint
 #define REAPERAPI_WANT_Envelope_SortPoints
 #define REAPERAPI_WANT_DeleteEnvelopePointEx
+#define REAPERAPI_WANT_GetSetProjectInfo
+#define REAPERAPI_WANT_GetSetProjectInfo_String
+#define REAPERAPI_WANT_kbd_getTextFromCmd
+#define REAPERAPI_WANT_Main_OnCommandEx
 #include "reaper_plugin_functions.h"

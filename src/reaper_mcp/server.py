@@ -11,6 +11,7 @@ from reaper_mcp.tools.fx import SPECS as FX_SPECS
 from reaper_mcp.tools.items import SPECS as ITEM_SPECS
 from reaper_mcp.tools.markers import SPECS as MARKER_SPECS
 from reaper_mcp.tools.project import SPECS as PROJECT_SPECS
+from reaper_mcp.tools.render import SPECS as RENDER_SPECS
 from reaper_mcp.tools.takes import SPECS as TAKE_SPECS
 from reaper_mcp.tools.tracks import SPECS as TRACK_SPECS
 from reaper_mcp.tools.transport import SPECS as TRANSPORT_SPECS
@@ -24,6 +25,7 @@ SPECS = (
     + FX_SPECS
     + MARKER_SPECS
     + AUTOMATION_SPECS
+    + RENDER_SPECS
 )
 
 

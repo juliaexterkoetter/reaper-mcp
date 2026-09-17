@@ -6,6 +6,7 @@
 #include "fx.hpp"
 #include "markers.hpp"
 #include "automation.hpp"
+#include "render.hpp"
 #include <cstring>
 #include <iostream>
 
@@ -84,6 +85,9 @@ int main() {
         add_automation_operations();args["expected_state_version"]=6;
         try{dispatch("automation.delete",args,"confirm-destructive");throw std::runtime_error("stale point accepted");}
         catch(const Error& e){if(e.code!="PROJECT_CHANGED")throw;}
+        GetSetProjectInfo=[](ReaProject*,const char*,double,bool){return 1.0;};add_render_operations();
+        try{dispatch("render.start",args,"confirm-destructive");throw std::runtime_error("unsafe render mode accepted");}
+        catch(const Error& e){if(e.code!="UNSUPPORTED_RENDER_MODE")throw;}
         std::cout<<"Native project and track checks passed\n"; return 0;
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n'; return 1; }
 }

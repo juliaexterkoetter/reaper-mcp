@@ -91,3 +91,22 @@ operates on base points only and requires confirmation. Update/delete require
 `expected_state_version` from the preceding envelope read, so stale indices
 fail closed. Re-read after edits because sorting can change indices. Creation
 of envelope lanes is planned; tools do not silently create lanes or change modes.
+
+## Render (experimental)
+
+Read settings, set sample rate/channels, queue a render and inspect its status.
+Rendering requires approval and reserves a new child directory under the
+configured output directory (or `<project>/renders`). The filename is `render`
+with the current format's extension. Existing files are never selected as
+outputs; original output settings are restored. Supported execution is limited
+to one master-mix output, project/custom/time-selection bounds, no secondary
+format and no add-to-project. Other modes fail closed. The built-in action is
+verified by its English description at runtime; localized descriptions that do
+not match are rejected. No arbitrary action tool is exposed.
+
+The initial response is `queued`, not success. Native render may block REAPER's
+timer; status calls can time out while busy. Retry read-only status later, never
+repeat render.start on uncertainty. `output-produced` means a nonempty file was
+observed, not that content/quality was verified; cancellation may leave a partial
+file. Audition output. Jobs are session-local. Rendering/preset UX needs real
+REAPER acceptance testing. Preset application remains planned.

@@ -9,12 +9,17 @@
 #include "fx.hpp"
 #include "markers.hpp"
 #include "automation.hpp"
+#include "render.hpp"
 
 namespace {
 reaper_plugin_info_t* host = nullptr;
 rmcp::Bridge bridge;
 void tick() noexcept {
-    try { bridge.tick(); } catch (...) { bridge.stop(); }
+    static bool active=false;
+    if(active)return;
+    active=true;
+    try { bridge.tick(); rmcp::run_pending_render(); } catch (...) { bridge.stop(); }
+    active=false;
 }
 }
 extern "C" REAPER_PLUGIN_DLL_EXPORT int REAPER_PLUGIN_ENTRYPOINT(
@@ -34,6 +39,7 @@ extern "C" REAPER_PLUGIN_DLL_EXPORT int REAPER_PLUGIN_ENTRYPOINT(
         rmcp::add_fx_operations();
         rmcp::add_marker_operations();
         rmcp::add_automation_operations();
+        rmcp::add_render_operations();
         bridge.dispatch = [](const std::string& m,const rmcp::json& p) { return rmcp::dispatch(m,p,bridge.policy); };
         bridge.start(std::filesystem::u8path(GetResourcePath()) / "ReaperMCP");
         host = info;

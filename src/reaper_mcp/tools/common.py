@@ -62,7 +62,7 @@ def register(server: MCPServer, bridge: Bridge, policy: Policy, specs: list[Spec
             description=spec.description,
             annotations=ToolAnnotations(
                 read_only_hint=spec.access == "read",
-                destructive_hint=spec.access == "destructive",
+                destructive_hint=spec.access in ("destructive", "render"),
                 open_world_hint=False,
             ),
         )
