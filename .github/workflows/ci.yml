@@ -1,10 +1,19 @@
 name: CI
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
   python:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
@@ -14,20 +23,34 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - run: python -m pip install -e ".[dev]"
-      - run: ruff check src tests
-      - run: ruff format --check src tests
+      - run: python -m pip install -c packaging/constraints.txt -e ".[dev]"
+      - run: ruff check src tests scripts
+      - run: ruff format --check src tests scripts
       - run: mypy src
       - run: pytest -q
       - run: python -m build
   native:
     runs-on: windows-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - run: cmake -S reaper-extension -B build/extension -A x64
       - run: cmake --build build/extension --config Release
-      - run: ctest --test-dir build/extension -C Release --output-on-failure
+      - run: ctest --test-dir build/extension -C Release --output-on-failure --timeout 60
       - run: cmake --install build/extension --config Release --prefix dist/native
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install -g @openai/codex
+      - run: python -m pip install -c packaging/constraints.txt -e ".[dev]"
+      - run: ./scripts/build_windows.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reaper-mcp-windows-x64-release
+          path: dist/release
       - uses: actions/upload-artifact@v4
         with:
           name: reaper-mcp-native-windows-x64
