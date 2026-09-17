@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Stop'
-python -m pip install 'pyinstaller==6.22.3'
+python -m pip install -c packaging/constraints.txt 'pyinstaller==6.22.3'
 if ($LASTEXITCODE) { throw 'PyInstaller installation failed' }
 python scripts/collect_licenses.py build/licenses
 if ($LASTEXITCODE) { throw 'License collection failed' }
@@ -15,4 +15,9 @@ python scripts/smoke_bundle.py dist/reaper-mcp/reaper-mcp.exe dist/release/reape
 if ($LASTEXITCODE) { throw 'Setup install/uninstall smoke failed' }
 Compress-Archive -Path dist/reaper-mcp -DestinationPath dist/release/reaper-mcp-0.1.0-alpha.1-windows-x64.zip -Force
 Copy-Item dist/native/reaper_mcp.dll dist/release/reaper_mcp.dll
+python -m build
+if ($LASTEXITCODE) { throw 'Python distribution build failed' }
+Copy-Item dist/*.whl dist/release/
+Copy-Item dist/*.tar.gz dist/release/
+python -m pip freeze | Set-Content dist/release/build-dependencies.txt
 Get-ChildItem dist/release -File | ForEach-Object { "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name } | Set-Content dist/release/SHA256SUMS.txt
