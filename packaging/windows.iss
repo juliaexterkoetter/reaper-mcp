@@ -28,15 +28,15 @@ Name: "{group}\REAPER MCP diagnostic"; Filename: "{cmd}"; Parameters: "/K """"{a
 Name: "{group}\REAPER MCP documentation"; Filename: "https://github.com/juliaexterkoetter/reaper-mcp"
 
 [Code]
-var Paths: TInputDirWizardPage;
+var Paths: TInputQueryWizardPage;
 
 procedure InitializeWizard;
 begin
-  Paths := CreateInputDirPage(wpSelectDir, 'REAPER integration',
+  Paths := CreateInputQueryPage(wpSelectDir, 'REAPER integration',
     'Close REAPER before continuing.',
-    'Leave blank for automatic detection. For portable REAPER, select its folder. Codex CLI must be on PATH.', False, '');
-  Paths.Add('REAPER installation folder (optional):');
-  Paths.Add('REAPER resource folder (optional):');
+    'Leave blank for automatic detection. For portable REAPER, select its folder path. Codex CLI must be on PATH.');
+  Paths.Add('REAPER installation folder (optional):', False);
+  Paths.Add('REAPER resource folder (optional):', False);
   Paths.Values[0] := ExpandConstant('{param:REAPERPATH|}');
   Paths.Values[1] := ExpandConstant('{param:RESOURCEDIR|}');
 end;
