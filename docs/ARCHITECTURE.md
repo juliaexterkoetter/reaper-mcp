@@ -42,9 +42,10 @@ one peer and transfers at most 64 KiB per peer, with at most eight peers and a
 2-second lifetime. Frames are bounded to 1 MiB. The timer owns socket state and
 all future REAPER operations; no cross-thread pointer lifetime exists.
 Unloading unregisters the callback before closing peers/listener and deleting
-owned discovery. MCP termination does not affect REAPER. An existing discovery
-file prevents a second instance from overwriting the endpoint. Crash leftovers
-need a diagnostic repair after confirming that the original process is gone.
+owned discovery. MCP termination does not affect REAPER. An exclusive Windows file handle
+prevents a second instance or installer from owning the same resource directory.
+The operating system releases it after a crash; the next launch safely replaces
+stale discovery. The JSON parser rejects nesting deeper than 32 levels.
 
 Blocking REAPER API operations are not made asynchronous by this architecture.
 Native dialogs and long renders need explicit UX treatment. Budgeting network

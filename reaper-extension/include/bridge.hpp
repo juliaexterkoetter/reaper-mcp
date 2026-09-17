@@ -24,6 +24,7 @@ class Bridge {
         std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     };
     SOCKET listener = INVALID_SOCKET;
+    HANDLE instance_lock = INVALID_HANDLE_VALUE;
     std::vector<Peer> peers;
     std::filesystem::path discovery;
     std::string token;
@@ -42,6 +43,8 @@ public:
             std::filesystem::remove(discovery, ec);
             discovery.clear();
         }
+        if (instance_lock != INVALID_HANDLE_VALUE) CloseHandle(instance_lock);
+        instance_lock = INVALID_HANDLE_VALUE;
         if (winsock) WSACleanup();
         winsock = false;
     }
@@ -53,9 +56,15 @@ public:
         if (token.size() != 64 || token.find_first_not_of("0123456789abcdef") != std::string::npos ||
             (policy != "read-only" && policy != "confirm-destructive" && policy != "full-control"))
             throw Error("INVALID_CONFIGURATION", "Invalid configuration");
-        // Existing discovery is never overwritten: prevents multiple instances sharing one resource dir.
-        if (std::filesystem::exists(root / "bridge.json"))
-            throw Error("INSTANCE_CONFLICT", "Remove stale discovery with doctor after closing REAPER");
+        // Share mode zero serializes instances and installers. The OS releases this
+        // handle after crashes, so stale discovery can safely be replaced.
+        instance_lock = CreateFileW((root / "instance.lock").c_str(), GENERIC_READ | GENERIC_WRITE,
+            0, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, nullptr);
+        if (instance_lock == INVALID_HANDLE_VALUE)
+            throw Error("INSTANCE_CONFLICT", "Another REAPER instance or installer owns this resource directory");
+        std::error_code ec;
+        std::filesystem::remove(root / "bridge.json", ec);
+        if(ec) throw Error("DISCOVERY_ERROR", "Cannot remove stale discovery");
         WSADATA data{};
         if (WSAStartup(MAKEWORD(2,2), &data)) throw Error("NETWORK_ERROR", "WSAStartup failed");
         winsock = true;
@@ -80,10 +89,14 @@ public:
         if (!out) throw Error("DISCOVERY_ERROR", "Cannot write discovery");
         std::filesystem::rename(temp, discovery);
     }
-    std::string respond(const std::string& input) noexcept {
+    std::string respond(const std::string& input) {
         json id = nullptr;
         try {
-            auto req = json::parse(input);
+            if(input.size()>max_frame) throw Error("REQUEST_TOO_LARGE", "Request exceeds size limit");
+            auto req = json::parse(input, [](int depth, json::parse_event_t, json&) {
+                if(depth>32) throw Error("INVALID_REQUEST", "JSON nesting exceeds 32 levels");
+                return true;
+            });
             if (!req.is_object() || req.value("jsonrpc", "") != "2.0" ||
                 !req.contains("id") || !req["id"].is_string() ||
                 !req.contains("params") || !req["params"].is_object())

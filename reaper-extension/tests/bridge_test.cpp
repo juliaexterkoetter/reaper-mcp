@@ -12,7 +12,13 @@ int main() {
             if (method == "ping") return {{"ok",true}};
             throw Error("METHOD_NOT_FOUND", "Unknown method");
         };
+        std::ofstream(dir / "bridge.json") << "stale discovery";
         bridge.start(dir);
+        { Bridge other;
+          try { other.start(dir); throw std::runtime_error("second instance accepted"); }
+          catch(const Error& e) { if(e.code!="INSTANCE_CONFLICT")throw; }
+        }
+        if(!std::filesystem::exists(dir / "bridge.json"))throw std::runtime_error("other instance removed discovery");
         auto request = json{{"jsonrpc","2.0"},{"id","1"},{"method","ping"},
             {"params",json::object()},{"auth",std::string(64,'a')}};
         auto result = json::parse(bridge.respond(request.dump()));
@@ -23,6 +29,8 @@ int main() {
             throw std::runtime_error("auth bypass");
         if (!json::parse(bridge.respond("[]")).contains("error")) throw std::runtime_error("batch accepted");
         if (!json::parse(bridge.respond("garbage")).contains("error")) throw std::runtime_error("bad JSON accepted");
+        std::string deep(1000,'[');deep+=std::string(1000,']');
+        if(!json::parse(bridge.respond(deep)).contains("error"))throw std::runtime_error("deep JSON accepted");
         bridge.stop();
         if (std::filesystem::exists(dir / "bridge.json")) throw std::runtime_error("discovery leaked");
         std::filesystem::remove_all(dir);

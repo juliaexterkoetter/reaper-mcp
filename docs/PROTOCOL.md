@@ -16,8 +16,7 @@ numbers are forbidden. Unknown methods fail closed. No raw REAPER action tool.
 `bridge.info` negotiates protocol_version, extension_version, reaper_version
 and explicit method capabilities. Incompatible versions fail before mutation.
 Client timeout: 5 seconds; no automatic retries. After timeout, outcome may be
-unknown: inspect state before editing again. Server closes idle clients after
-2 seconds. A client disconnect does not roll back an executed edit.
+unknown: inspect state before editing again. Server closes clients after 2 seconds; JSON nesting is limited to 32 levels. A client disconnect does not roll back an executed edit.
 
 Track/item/FX selectors use GUIDs, tracks may also use exact names; duplicate
 names return AMBIGUOUS_TRACK. Indices are only used for API-specific parameters
