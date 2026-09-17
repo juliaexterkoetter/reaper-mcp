@@ -24,3 +24,13 @@ Save As dialog. Save As is planned, pending safe path/overwrite handling.
 
 Confirmation is a client assertion after user approval, not cryptographic proof
 of consent. Use read-only policy when edits must be technically impossible.
+
+## Tracks
+
+Implemented: list/get, create/delete/rename, set volume/pan, mute/unmute,
+solo/unsolo. Exact names are accepted but duplicates return AMBIGUOUS_TRACK;
+use returned GUIDs. `volume_db: null` means silence. `relative: true` applies a
+delta in dB, e.g. -3. Relative changes from silence are rejected. Pan ranges
+from -100 (left) to +100 (right). All changes use native Undo blocks. Track
+creation appends to the active project. Deletion requires confirmation.
+The master track is not included. Lists have a 2000-track safety ceiling.

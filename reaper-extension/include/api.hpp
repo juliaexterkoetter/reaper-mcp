@@ -16,4 +16,12 @@
 #define REAPERAPI_WANT_Undo_BeginBlock2
 #define REAPERAPI_WANT_Undo_EndBlock2
 #define REAPERAPI_WANT_UpdateArrange
+#define REAPERAPI_WANT_GetTrack
+#define REAPERAPI_WANT_GetTrackName
+#define REAPERAPI_WANT_GetSetMediaTrackInfo_String
+#define REAPERAPI_WANT_GetMediaTrackInfo_Value
+#define REAPERAPI_WANT_SetMediaTrackInfo_Value
+#define REAPERAPI_WANT_InsertTrackAtIndex
+#define REAPERAPI_WANT_DeleteTrack
+#define REAPERAPI_WANT_TrackList_AdjustWindows
 #include "reaper_plugin_functions.h"

@@ -1,9 +1,12 @@
 #include "bridge.hpp"
 #define REAPERAPI_IMPLEMENT
 #include "adapter.hpp"
+#include "tracks.hpp"
 #include <cstring>
 #include <iostream>
 
+double test_gain=1.0;
+int undo_begin=0,undo_end=0;
 int main() {
     using namespace rmcp;
     EnumProjects = [](int i,char* out,int size) -> ReaProject* {
@@ -31,6 +34,27 @@ int main() {
         args["project_id"]="old-project";
         try { dispatch("project.save",args,"confirm-destructive"); throw std::runtime_error("stale project accepted"); }
         catch(const Error& e) { if(e.code!="PROJECT_CHANGED") throw; }
-        std::cout<<"Native project checks passed\n"; return 0;
+        CountTracks=[](ReaProject*){return 2;};
+        GetTrack=[](ReaProject*,int index)->MediaTrack*{return reinterpret_cast<MediaTrack*>(static_cast<uintptr_t>(index+1));};
+        GetTrackName=[](MediaTrack*,char* out,int){std::strcpy(out,"Voz");return true;};
+        GetSetMediaTrackInfo_String=[](MediaTrack* t,const char*,char* out,bool){
+            std::strcpy(out,t==reinterpret_cast<MediaTrack*>(1)?"{A}":"{B}");return true;};
+        GetMediaTrackInfo_Value=[](MediaTrack*,const char* key){return std::string(key)=="D_VOL"?test_gain:0.0;};
+        SetMediaTrackInfo_Value=[](MediaTrack*,const char*,double v){test_gain=v;return true;};
+        Undo_BeginBlock2=[](ReaProject*){++undo_begin;};
+        Undo_EndBlock2=[](ReaProject*,const char*,int){++undo_end;};
+        UpdateArrange=[](){};
+        add_track_operations();
+        args["project_id"]=p.at("project_id"); args["track"]="Voz";
+        try { dispatch("tracks.get",args,"read-only"); throw std::runtime_error("ambiguous name accepted"); }
+        catch(const Error& e) { if(e.code!="AMBIGUOUS_TRACK") throw; }
+        args["track"]="{A}"; args["volume_db"]=-6.0; args["relative"]=true;
+        auto t=dispatch("tracks.volume",args,"confirm-destructive");
+        if(std::abs(t.at("volume_db").get<double>()+6)>1e-9 || undo_begin!=1 || undo_end!=1)
+            throw std::runtime_error("volume/undo mismatch");
+        args["volume_db"]=nullptr; args["relative"]=false;
+        t=dispatch("tracks.volume",args,"confirm-destructive");
+        if(!t.at("volume_db").is_null()) throw std::runtime_error("silence mismatch");
+        std::cout<<"Native project and track checks passed\n"; return 0;
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n'; return 1; }
 }
