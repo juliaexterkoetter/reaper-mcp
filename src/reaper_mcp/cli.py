@@ -1,6 +1,7 @@
 """Accessible command-line administration. MCP stdout is never used for logs."""
 
 import argparse
+import asyncio
 import json
 import sys
 from pathlib import Path
@@ -14,10 +15,13 @@ def main() -> None:
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("serve")
     commands.add_parser("version")
+    for name in ("doctor", "status"):
+        commands.add_parser(name).add_argument("--json", action="store_true")
     setup = commands.add_parser("install")
     setup.add_argument("--reaper-path", type=Path)
     setup.add_argument("--resource-dir", type=Path)
     setup.add_argument("--extension", type=Path)
+    setup.add_argument("--skip-codex", action="store_true")
     setup.add_argument("--policy", choices=["read-only", "confirm-destructive", "full-control"])
     commands.add_parser("uninstall")
     args = parser.parse_args()
@@ -30,11 +34,26 @@ def main() -> None:
             from reaper_mcp.install.manager import install
 
             record = install(args.reaper_path, args.resource_dir, args.extension, args.policy)
+            if not args.skip_codex:
+                from reaper_mcp.install.codex import register
+
+                register(record)
             print(f"[OK] Native extension installed in {record.resource_dir}. Open REAPER next.")
         elif args.command == "uninstall":
             from reaper_mcp.install.manager import uninstall_files
 
             print("[OK] Integration removed." if uninstall_files() else "[OK] Not installed.")
+        elif args.command in {"doctor", "status"}:
+            from reaper_mcp.diagnostics import diagnose
+
+            report = asyncio.run(diagnose())
+            if args.json:
+                print(json.dumps(report, indent=2))
+            else:
+                for check in report["checks"]:
+                    label = "OK" if check["ok"] else "ERROR"
+                    print(f"[{label}] {check['component']}: {check.get('detail', 'available')}")
+            raise SystemExit(0 if report["ready"] else 1)
         else:
             print(
                 json.dumps(
