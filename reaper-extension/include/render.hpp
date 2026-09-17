@@ -83,6 +83,8 @@ inline void add_render_operations() {
         if(!parent.is_absolute() || parent.u8string().rfind("\\\\",0)==0 || GetDriveTypeW(parent.root_path().c_str())==DRIVE_REMOTE)
             throw Error("INVALID_PATH","Render output must be an absolute local filesystem directory");
         std::filesystem::create_directories(parent);parent=std::filesystem::canonical(parent);
+        if(parent.u8string().rfind("\\\\",0)==0 || GetDriveTypeW(parent.root_path().c_str())==DRIVE_REMOTE)
+            throw Error("INVALID_PATH","Resolved render output must remain on a local filesystem");
         auto name="reaper-mcp-"+std::to_string(GetCurrentProcessId())+"-"+std::to_string(GetTickCount64());auto root=parent/name;
         if(!std::filesystem::create_directory(root))throw Error("OUTPUT_EXISTS","Output reservation failed; inspect before retrying");
         render_job={{"state","queued"},{"job_id",name},{"output_directory",root.u8string()}};pending_render=p;return render_job;

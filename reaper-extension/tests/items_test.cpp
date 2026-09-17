@@ -41,6 +41,15 @@ int main() {
         CountTakes=[](MediaItem*){return 0;};add_take_operations();
         if(!dispatch("takes.active",args,"read-only").is_null() || !dispatch("takes.list",args,"read-only").empty())
             throw std::runtime_error("empty takes failed");
+        static const std::string long_name(8192,'x');
+        GetTakeName=[](MediaItem_Take*)->const char*{return long_name.c_str();};
+        GetSetMediaItemTakeInfo_String=[](MediaItem_Take*,const char* key,char* out,bool){
+            if(std::string(key)!="GUID")throw std::runtime_error("unbounded take-name copy");
+            std::strcpy(out,"{TAKE}");return true;};
+        GetMediaItemTakeInfo_Value=[](MediaItem_Take*,const char*){return 1.0;};
+        TakeIsMIDI=[](MediaItem_Take*){return false;};
+        if(take_info(reinterpret_cast<MediaItem_Take*>(1)).at("name")!=long_name)
+            throw std::runtime_error("long take name was not preserved");
         std::cout<<"Item trim and lock checks passed\n";return 0;
     }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }
