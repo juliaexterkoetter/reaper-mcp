@@ -3,10 +3,10 @@
 namespace rmcp {
 inline json take_info(MediaItem_Take* take) {
     if(!take) return nullptr;
-    char guid[128]{},name[4096]{};
+    char guid[128]{};
     if(!GetSetMediaItemTakeInfo_String(take,"GUID",guid,false)) throw Error("INVALID_TAKE","Cannot read take GUID");
-    GetSetMediaItemTakeInfo_String(take,"P_NAME",name,false);
-    return {{"guid",guid},{"name",name},{"source_offset_seconds",GetMediaItemTakeInfo_Value(take,"D_STARTOFFS")},
+    const char* name=GetTakeName(take);
+    return {{"guid",guid},{"name",name?name:""},{"source_offset_seconds",GetMediaItemTakeInfo_Value(take,"D_STARTOFFS")},
         {"playback_rate",GetMediaItemTakeInfo_Value(take,"D_PLAYRATE")},{"is_midi",TakeIsMIDI(take)}};
 }
 inline void add_take_operations() {
