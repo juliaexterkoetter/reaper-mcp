@@ -26,6 +26,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: cmake -S reaper-extension -B build/extension -A x64
       - run: cmake --build build/extension --config Release
+      - run: ctest --test-dir build/extension -C Release --output-on-failure
       - run: cmake --install build/extension --config Release --prefix dist/native
       - uses: actions/upload-artifact@v4
         with:
