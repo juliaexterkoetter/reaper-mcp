@@ -17,6 +17,7 @@ SolidCompression=yes
 WizardStyle=modern
 LicenseFile=..\LICENSE
 CloseApplications=no
+ChangesEnvironment=yes
 UninstallDisplayIcon={app}\reaper-mcp.exe
 
 [Files]
@@ -40,6 +41,36 @@ begin
   Paths.Values[1] := ExpandConstant('{param:RESOURCEDIR|}');
 end;
 
+procedure AddCommandPath;
+var Value, AppPath: String;
+begin
+  AppPath := ExpandConstant('{app}');
+  RegQueryStringValue(HKCU, 'Environment', 'Path', Value);
+  if Pos(';' + Uppercase(AppPath) + ';', ';' + Uppercase(Value) + ';') = 0 then begin
+    if Value <> '' then Value := Value + ';';
+    if not RegWriteExpandStringValue(HKCU, 'Environment', 'Path', Value + AppPath) then
+      RaiseException('Cannot add the command to the user PATH.');
+    RegWriteStringValue(HKCU, 'Software\ReaperMCP', 'OwnedPath', AppPath);
+  end;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var Value, Owned: String; Index: Integer;
+begin
+  if CurUninstallStep = usPostUninstall then begin
+    if RegQueryStringValue(HKCU, 'Software\ReaperMCP', 'OwnedPath', Owned) then begin
+      RegQueryStringValue(HKCU, 'Environment', 'Path', Value);
+      Value := ';' + Value + ';';
+      Index := Pos(';' + Uppercase(Owned) + ';', Uppercase(Value));
+      if Index > 0 then Delete(Value, Index, Length(Owned) + 1);
+      if (Length(Value) > 0) and (Value[1] = ';') then Delete(Value, 1, 1);
+      if (Length(Value) > 0) and (Value[Length(Value)] = ';') then Delete(Value, Length(Value), 1);
+      RegWriteExpandStringValue(HKCU, 'Environment', 'Path', Value);
+      RegDeleteValue(HKCU, 'Software\ReaperMCP', 'OwnedPath');
+    end;
+  end;
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 var Args: String; Code: Integer;
 begin
@@ -52,6 +83,7 @@ begin
       RaiseException('Cannot start REAPER MCP installer.');
     if Code <> 0 then
       RaiseException('REAPER integration failed. Application files remain available for repair. Run reaper-mcp install in the installed folder to see the cause.');
+    AddCommandPath;
   end;
 end;
 

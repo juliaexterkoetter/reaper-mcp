@@ -55,6 +55,34 @@ async def smoke(executable: Path) -> None:
         run("uninstall")
         assert not (resource / "UserPlugins" / "reaper_mcp.dll").exists()
         run("uninstall")
+        if len(sys.argv) > 2:
+            setup = Path(sys.argv[2]).resolve()
+            destination = root / "Installed application"
+            result = subprocess.run(
+                [
+                    str(setup),
+                    "/VERYSILENT",
+                    "/SUPPRESSMSGBOXES",
+                    "/NORESTART",
+                    f"/DIR={destination}",
+                    f"/REAPERPATH={resource}",
+                    f"/LOG={root / 'setup.log'}",
+                ],
+                env=env,
+            )
+            assert result.returncode == 0, (root / "setup.log").read_text(errors="replace")
+            assert (resource / "UserPlugins" / "reaper_mcp.dll").is_file()
+            result = subprocess.run(
+                [
+                    str(destination / "unins000.exe"),
+                    "/VERYSILENT",
+                    "/SUPPRESSMSGBOXES",
+                    "/NORESTART",
+                ],
+                env=env,
+            )
+            assert result.returncode == 0
+            assert not (resource / "UserPlugins" / "reaper_mcp.dll").exists()
     print("PASS: frozen MCP, official Codex registration, reinstall, doctor, uninstall")
 
 
