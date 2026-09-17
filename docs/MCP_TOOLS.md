@@ -80,3 +80,14 @@ baseline); older releases missing required APIs cannot load the extension.
 Updates provide the complete name/time range; deletion requires confirmation.
 Displayed marker numbers are informational, never identity selectors. Marker
 colors and lanes are preserved when updating existing markers.
+
+## Automation
+
+List existing track envelopes and read paginated underlying points. Create and
+update points in existing built-in volume/pan envelopes using dB/percentage,
+with REAPER scaling conversion. Other envelope types are readable; generic FX
+units and automation-item pools are not writable in this release. Deletion
+operates on base points only and requires confirmation. Update/delete require
+`expected_state_version` from the preceding envelope read, so stale indices
+fail closed. Re-read after edits because sorting can change indices. Creation
+of envelope lanes is planned; tools do not silently create lanes or change modes.

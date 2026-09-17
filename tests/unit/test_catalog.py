@@ -20,6 +20,12 @@ EXAMPLE = {
     "normalized_value": 0.5,
     "guid": "{MARKER}",
     "confirm": True,
+    "envelope": "{ENV}",
+    "time_seconds": 1.0,
+    "value": -3.0,
+    "unit": "db",
+    "point_index": 0,
+    "expected_state_version": 7,
 }
 
 

@@ -5,6 +5,7 @@
 #include "transport.hpp"
 #include "fx.hpp"
 #include "markers.hpp"
+#include "automation.hpp"
 #include <cstring>
 #include <iostream>
 
@@ -80,6 +81,9 @@ int main() {
         args["name"]="Region";args["position_seconds"]=5;args["end_seconds"]=4;
         try{dispatch("regions.create",args,"confirm-destructive");throw std::runtime_error("inverted region accepted");}
         catch(const Error& e){if(e.code!="INVALID_PARAMETER")throw;}
+        add_automation_operations();args["expected_state_version"]=6;
+        try{dispatch("automation.delete",args,"confirm-destructive");throw std::runtime_error("stale point accepted");}
+        catch(const Error& e){if(e.code!="PROJECT_CHANGED")throw;}
         std::cout<<"Native project and track checks passed\n"; return 0;
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n'; return 1; }
 }
