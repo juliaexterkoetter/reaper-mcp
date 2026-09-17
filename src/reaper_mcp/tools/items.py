@@ -1,4 +1,6 @@
-from pydantic import Field
+from typing import Self
+
+from pydantic import Field, model_validator
 
 from reaper_mcp.tools.common import ProjectParams, Spec
 
@@ -20,6 +22,12 @@ class Trim(Item):
     start_seconds: float = Field(ge=0, le=8640000)
     end_seconds: float = Field(gt=0, le=8640000)
     confirm: bool = False
+
+    @model_validator(mode="after")
+    def ordered_interval(self) -> Self:
+        if self.end_seconds <= self.start_seconds:
+            raise ValueError("end_seconds must be greater than start_seconds")
+        return self
 
 
 class Delete(Item):
