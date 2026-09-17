@@ -3,6 +3,9 @@
 namespace rmcp {
 inline json resource_files(const std::filesystem::path& root,const std::string& extension) {
     json files=json::array();std::error_code ec;bool truncated=false;int visited=0;
+    auto root_attr=GetFileAttributesW(root.c_str());
+    if(root_attr!=INVALID_FILE_ATTRIBUTES && (root_attr&FILE_ATTRIBUTE_REPARSE_POINT))
+        return {{"files",files},{"truncated",false},{"read_error",true}};
     auto it=std::filesystem::recursive_directory_iterator(root,std::filesystem::directory_options::skip_permission_denied,ec);
     const auto end=std::filesystem::recursive_directory_iterator();
     for(;it!=end && !ec;it.increment(ec)){
