@@ -8,6 +8,7 @@ AppPublisherURL=https://github.com/juliaexterkoetter/reaper-mcp
 DefaultDirName={localappdata}\Programs\ReaperMCP
 DefaultGroupName=REAPER MCP
 PrivilegesRequired=lowest
+MinVersion=10.0
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=..\dist\release
