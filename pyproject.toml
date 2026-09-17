@@ -1,0 +1,34 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "reaper-mcp"
+version = "0.1.0a1"
+description = "Local MCP control of REAPER through a native extension"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{name = "Julia Exterkoetter"}]
+dependencies = ["mcp>=2.2,<3", "pydantic>=2.11,<3"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-asyncio>=1", "ruff>=0.12", "mypy>=1.15", "build>=1.2"]
+
+[project.scripts]
+reaper-mcp = "reaper_mcp.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = ["e2e: requires a real running REAPER instance"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
