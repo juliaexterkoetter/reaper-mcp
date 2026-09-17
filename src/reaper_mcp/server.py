@@ -14,7 +14,6 @@ from reaper_mcp.tools.takes import SPECS as TAKE_SPECS
 from reaper_mcp.tools.tracks import SPECS as TRACK_SPECS
 from reaper_mcp.tools.transport import SPECS as TRANSPORT_SPECS
 
-
 SPECS = (
     PROJECT_SPECS
     + TRACK_SPECS
