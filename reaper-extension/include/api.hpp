@@ -38,4 +38,10 @@
 #define REAPERAPI_WANT_CountTakes
 #define REAPERAPI_WANT_GetTake
 #define REAPERAPI_WANT_GetActiveTake
+#define REAPERAPI_WANT_GetPlayStateEx
+#define REAPERAPI_WANT_GetCursorPositionEx
+#define REAPERAPI_WANT_SetEditCurPos2
+#define REAPERAPI_WANT_OnPlayButtonEx
+#define REAPERAPI_WANT_OnStopButtonEx
+#define REAPERAPI_WANT_OnPauseButtonEx
 #include "reaper_plugin_functions.h"

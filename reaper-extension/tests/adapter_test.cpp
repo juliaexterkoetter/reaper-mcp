@@ -2,11 +2,13 @@
 #define REAPERAPI_IMPLEMENT
 #include "adapter.hpp"
 #include "tracks.hpp"
+#include "transport.hpp"
 #include <cstring>
 #include <iostream>
 
 double test_gain=1.0;
 int undo_begin=0,undo_end=0;
+int playback=0;
 int main() {
     using namespace rmcp;
     EnumProjects = [](int i,char* out,int size) -> ReaProject* {
@@ -55,6 +57,15 @@ int main() {
         args["volume_db"]=nullptr; args["relative"]=false;
         t=dispatch("tracks.volume",args,"confirm-destructive");
         if(!t.at("volume_db").is_null()) throw std::runtime_error("silence mismatch");
+        GetPlayStateEx=[](ReaProject*){return playback;};
+        OnPlayButtonEx=[](ReaProject*){playback=1;};OnStopButtonEx=[](ReaProject*){playback=0;};
+        OnPauseButtonEx=[](ReaProject*){playback^=2;};add_transport_operations();
+        dispatch("transport.play",args,"confirm-destructive");
+        dispatch("transport.pause",args,"confirm-destructive");
+        dispatch("transport.pause",args,"confirm-destructive");
+        if(!(playback&2))throw std::runtime_error("pause toggled playback");
+        dispatch("transport.stop",args,"confirm-destructive");
+        if(playback)throw std::runtime_error("stop failed");
         std::cout<<"Native project and track checks passed\n"; return 0;
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n'; return 1; }
 }

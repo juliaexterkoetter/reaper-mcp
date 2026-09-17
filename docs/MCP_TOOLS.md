@@ -52,3 +52,10 @@ reported with an instruction to inspect or Undo; no fake atomic rollback.
 include take GUID/name, source offset, playback rate and MIDI status. Empty
 items have no active take (null); a list is limited to 1000 takes. Take mutation
 and source file access are not exposed.
+
+## Transport
+
+Implemented: play, stop, pause, get play state, get/set edit cursor. Cursor
+positions use seconds and do not seek playback unless explicitly requested.
+Repeated pause calls do not resume playback. Transport is excluded from Undo.
+Read-only policy blocks transport changes as well as project edits.
