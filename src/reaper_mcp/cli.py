@@ -6,7 +6,6 @@ import json
 import sys
 from pathlib import Path
 
-from reaper_mcp import PROTOCOL_VERSION, __version__
 from reaper_mcp.bridge.errors import BridgeError
 
 
@@ -70,15 +69,9 @@ def main() -> None:
                     print(f"[{label}] {check['component']}: {check.get('detail', 'available')}")
             raise SystemExit(0 if report["ready"] else 1)
         else:
-            print(
-                json.dumps(
-                    {
-                        "server": __version__,
-                        "protocol": PROTOCOL_VERSION,
-                        "runtime": sys.version.split()[0],
-                    }
-                )
-            )
+            from reaper_mcp.diagnostics import version_report
+
+            print(json.dumps(asyncio.run(version_report())))
     except BridgeError as exc:
         from reaper_mcp.logging_setup import event
 
