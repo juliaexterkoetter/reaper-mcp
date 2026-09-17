@@ -3,4 +3,17 @@
 #define REAPERAPI_MINIMAL
 #define REAPERAPI_WANT_GetAppVersion
 #define REAPERAPI_WANT_GetResourcePath
+#define REAPERAPI_WANT_EnumProjects
+#define REAPERAPI_WANT_GetProjectName
+#define REAPERAPI_WANT_GetProjectStateChangeCount
+#define REAPERAPI_WANT_CountTracks
+#define REAPERAPI_WANT_IsProjectDirty
+#define REAPERAPI_WANT_Main_SaveProject
+#define REAPERAPI_WANT_Undo_DoUndo2
+#define REAPERAPI_WANT_Undo_DoRedo2
+#define REAPERAPI_WANT_Undo_CanUndo2
+#define REAPERAPI_WANT_Undo_CanRedo2
+#define REAPERAPI_WANT_Undo_BeginBlock2
+#define REAPERAPI_WANT_Undo_EndBlock2
+#define REAPERAPI_WANT_UpdateArrange
 #include "reaper_plugin_functions.h"

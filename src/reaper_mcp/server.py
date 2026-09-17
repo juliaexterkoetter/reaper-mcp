@@ -3,9 +3,15 @@
 from mcp.server import MCPServer
 
 from reaper_mcp import PROTOCOL_VERSION, __version__
+from reaper_mcp.bridge.client import BridgeClient
+from reaper_mcp.config import Policy
+from reaper_mcp.tools.common import Bridge, register
+from reaper_mcp.tools.project import SPECS
 
 
-def create_server() -> MCPServer:
+def create_server(
+    bridge: Bridge | None = None, policy: Policy = "confirm-destructive"
+) -> MCPServer:
     server = MCPServer(
         "REAPER MCP",
         instructions="Control the local REAPER project. Inspect before editing. Use GUIDs. "
@@ -22,6 +28,7 @@ def create_server() -> MCPServer:
         """Return local server and internal protocol versions."""
         return {"server_version": __version__, "protocol_version": PROTOCOL_VERSION}
 
+    register(server, bridge or BridgeClient(), policy, SPECS)
     return server
 
 
