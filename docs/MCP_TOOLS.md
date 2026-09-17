@@ -110,3 +110,14 @@ repeat render.start on uncertainty. `output-produced` means a nonempty file was
 observed, not that content/quality was verified; cancellation may leave a partial
 file. Audition output. Jobs are session-local. Rendering/preset UX needs real
 REAPER acceptance testing. Preset application remains planned.
+
+## Environment
+
+`reaper_get_environment` reports versions, the active project, REAPER resource
+location, device sample rate (the native driver's text), and an explicitly
+configured project sample rate when present. Query plugins separately with
+`reaper_list_available_fx` to avoid returning every installed plugin each time.
+`reaper_list_resource_presets` discovers FX-chain and track-template files,
+with bounded traversal and no junction/symlink traversal. It does not load them.
+Render-preset enumeration/application and plugin-preset navigation are planned;
+unsupported data is labelled, never fabricated.

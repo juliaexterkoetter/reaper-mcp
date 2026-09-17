@@ -7,6 +7,7 @@ from reaper_mcp.bridge.client import BridgeClient
 from reaper_mcp.config import Policy
 from reaper_mcp.tools.automation import SPECS as AUTOMATION_SPECS
 from reaper_mcp.tools.common import Bridge, register
+from reaper_mcp.tools.environment import SPECS as ENVIRONMENT_SPECS
 from reaper_mcp.tools.fx import SPECS as FX_SPECS
 from reaper_mcp.tools.items import SPECS as ITEM_SPECS
 from reaper_mcp.tools.markers import SPECS as MARKER_SPECS
@@ -26,6 +27,7 @@ SPECS = (
     + MARKER_SPECS
     + AUTOMATION_SPECS
     + RENDER_SPECS
+    + ENVIRONMENT_SPECS
 )
 
 

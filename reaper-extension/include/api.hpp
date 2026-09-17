@@ -84,4 +84,5 @@
 #define REAPERAPI_WANT_GetSetProjectInfo_String
 #define REAPERAPI_WANT_kbd_getTextFromCmd
 #define REAPERAPI_WANT_Main_OnCommandEx
+#define REAPERAPI_WANT_GetAudioDeviceInfo
 #include "reaper_plugin_functions.h"

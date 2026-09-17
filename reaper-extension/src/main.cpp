@@ -10,6 +10,7 @@
 #include "markers.hpp"
 #include "automation.hpp"
 #include "render.hpp"
+#include "environment.hpp"
 
 namespace {
 reaper_plugin_info_t* host = nullptr;
@@ -40,6 +41,7 @@ extern "C" REAPER_PLUGIN_DLL_EXPORT int REAPER_PLUGIN_ENTRYPOINT(
         rmcp::add_marker_operations();
         rmcp::add_automation_operations();
         rmcp::add_render_operations();
+        rmcp::add_environment_operations();
         bridge.dispatch = [](const std::string& m,const rmcp::json& p) { return rmcp::dispatch(m,p,bridge.policy); };
         bridge.start(std::filesystem::u8path(GetResourcePath()) / "ReaperMCP");
         host = info;

@@ -1,6 +1,7 @@
 #include "bridge.hpp"
 #define REAPERAPI_IMPLEMENT
 #include "render.hpp"
+#include "environment.hpp"
 #include <cstring>
 #include <iostream>
 std::map<std::string,std::string> strings;
@@ -37,6 +38,9 @@ int main(){
         args["output_directory"]=(base/"second").u8string();escape_target=true;
         dispatch("render.start",args,"confirm-destructive");run_pending_render();
         if(render_job.at("state")!="failed" || render_calls!=1 || strings["RENDER_FILE"]!="original")throw std::runtime_error("unsafe target accepted");
+        std::ofstream(base/"voice.RfxChain")<<"test fixture";
+        auto presets=resource_files(base,".rfxchain");
+        if(presets.at("files").size()!=1 || presets.at("read_error")!=false)throw std::runtime_error("preset discovery failed");
         std::filesystem::remove_all(base);std::cout<<"Render isolation checks passed\n";return 0;
     }catch(const std::exception& e){std::cerr<<e.what()<<'\n';std::filesystem::remove_all(base);return 1;}
 }
