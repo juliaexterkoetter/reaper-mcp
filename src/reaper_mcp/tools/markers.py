@@ -2,7 +2,7 @@ from typing import Self
 
 from pydantic import Field, model_validator
 
-from reaper_mcp.tools.common import ProjectParams, Spec
+from reaper_mcp.tools.common import Params, ProjectParams, Spec
 
 
 class MarkerCreate(ProjectParams):
@@ -34,10 +34,11 @@ class Delete(ProjectParams):
 
 
 SPECS = []
-for kind, create, update in [
+FORMS: list[tuple[str, type[Params], type[Params]]] = [
     ("marker", MarkerCreate, MarkerUpdate),
     ("region", RegionCreate, RegionUpdate),
-]:
+]
+for kind, create, update in FORMS:
     SPECS.extend(
         [
             Spec(
