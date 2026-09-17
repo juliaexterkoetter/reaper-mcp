@@ -50,8 +50,9 @@ async def smoke(executable: Path) -> None:
                 catalog = await session.list_tools()
                 assert len(catalog.tools) > 50
                 assert not (await session.call_tool("reaper_ping", {})).is_error
-                result = await session.call_tool("reaper_get_project", {})
+                result = await session.call_tool("reaper_get_project", {"params": {}})
                 assert result.is_error  # No running REAPER; never invent a project.
+                assert "REAPER_NOT_RUNNING" in str(result.content)
         run("uninstall")
         assert not (resource / "UserPlugins" / "reaper_mcp.dll").exists()
         run("uninstall")

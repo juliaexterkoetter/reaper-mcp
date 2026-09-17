@@ -3,7 +3,10 @@ python -m pip install -c packaging/constraints.txt 'pyinstaller==6.22.3'
 if ($LASTEXITCODE) { throw 'PyInstaller installation failed' }
 python scripts/collect_licenses.py build/licenses
 if ($LASTEXITCODE) { throw 'License collection failed' }
-python -m PyInstaller --noconfirm --clean --onedir --console --noupx --name reaper-mcp --specpath build --paths src --collect-submodules mcp.server --collect-submodules mcp.types --collect-submodules reaper_mcp --recursive-copy-metadata mcp --add-data 'dist/native:native' --add-data 'LICENSE:.' --add-data 'build/licenses:licenses' src/reaper_mcp/cli.py
+$BundleNative = (Resolve-Path dist/native).Path
+$BundleLicense = (Resolve-Path LICENSE).Path
+$BundleNotices = (Resolve-Path build/licenses).Path
+python -m PyInstaller --noconfirm --clean --onedir --console --noupx --name reaper-mcp --specpath build --paths src --collect-submodules mcp.server --collect-submodules mcp.types --collect-submodules reaper_mcp --recursive-copy-metadata mcp --add-data "${BundleNative}:native" --add-data "${BundleLicense}:." --add-data "${BundleNotices}:licenses" src/reaper_mcp/cli.py
 if ($LASTEXITCODE) { throw 'Executable build failed' }
 Copy-Item README.md dist/reaper-mcp/README.md
 Copy-Item LICENSE dist/reaper-mcp/LICENSE
