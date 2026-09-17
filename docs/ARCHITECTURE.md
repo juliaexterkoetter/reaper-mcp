@@ -33,3 +33,19 @@ REAPER; render requires separate treatment and must not pretend to be async.
 
 Versions resolved by actual builds are recorded separately; documentation alone
 is not evidence that a package or a native binary was tested.
+
+## Native lifecycle and bounds
+
+The extension loads only the SDK functions explicitly requested by api.hpp and
+rejects incompatible hosts. Winsock IO never blocks: each timer accepts at most
+one peer and transfers at most 64 KiB per peer, with at most eight peers and a
+2-second lifetime. Frames are bounded to 1 MiB. The timer owns socket state and
+all future REAPER operations; no cross-thread pointer lifetime exists.
+Unloading unregisters the callback before closing peers/listener and deleting
+owned discovery. MCP termination does not affect REAPER. An existing discovery
+file prevents a second instance from overwriting the endpoint. Crash leftovers
+need a diagnostic repair after confirming that the original process is gone.
+
+Blocking REAPER API operations are not made asynchronous by this architecture.
+Native dialogs and long renders need explicit UX treatment. Budgeting network
+IO does not bound the duration of an individual host API call.

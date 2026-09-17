@@ -52,3 +52,28 @@ async def test_capability_fail_closed(endpoint):
 async def test_missing_reaper(tmp_path):
     with pytest.raises(BridgeError, match="REAPER_NOT_RUNNING"):
         await BridgeClient(tmp_path).call("bridge.info")
+
+
+async def test_timeout_does_not_retry(tmp_path):
+    from reaper_mcp.bridge.protocol import Discovery
+    from reaper_mcp.config import BridgeConfig
+
+    connected = []
+    handlers = []
+
+    async def hang(reader, writer):
+        connected.append(True)
+        handlers.append(writer)
+        await reader.read()
+        writer.close()
+
+    server = await asyncio.start_server(hang, "127.0.0.1", 0)
+    async with server:
+        client = BridgeClient(tmp_path, timeout=0.02)
+        endpoint = Discovery(protocol_version=1, port=server.sockets[0].getsockname()[1], pid=1)
+        with pytest.raises(BridgeError, match="BRIDGE_TIMEOUT"):
+            await client._request("tracks.delete", {}, endpoint, BridgeConfig(token="a" * 64))
+        assert len(connected) == 1
+    for writer in handlers:
+        writer.close()
+        await writer.wait_closed()
