@@ -1,6 +1,7 @@
 #include "bridge.hpp"
 #define REAPERAPI_IMPLEMENT
 #include "items.hpp"
+#include "takes.hpp"
 #include <cstring>
 #include <iostream>
 #include <memory>
@@ -36,6 +37,10 @@ int main() {
         media.back()->locked=true;args["item"]=result.at("guid");
         try{dispatch("items.delete",args,"confirm-destructive");throw std::runtime_error("locked item deleted");}
         catch(const Error& e){if(e.code!="ITEM_LOCKED")throw;}
+        GetActiveTake=[](MediaItem*)->MediaItem_Take*{return nullptr;};
+        CountTakes=[](MediaItem*){return 0;};add_take_operations();
+        if(!dispatch("takes.active",args,"read-only").is_null() || !dispatch("takes.list",args,"read-only").empty())
+            throw std::runtime_error("empty takes failed");
         std::cout<<"Item trim and lock checks passed\n";return 0;
     }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}
 }

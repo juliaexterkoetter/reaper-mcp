@@ -32,4 +32,10 @@
 #define REAPERAPI_WANT_SetMediaItemInfo_Value
 #define REAPERAPI_WANT_DeleteTrackMediaItem
 #define REAPERAPI_WANT_SplitMediaItem
+#define REAPERAPI_WANT_GetSetMediaItemTakeInfo_String
+#define REAPERAPI_WANT_GetMediaItemTakeInfo_Value
+#define REAPERAPI_WANT_TakeIsMIDI
+#define REAPERAPI_WANT_CountTakes
+#define REAPERAPI_WANT_GetTake
+#define REAPERAPI_WANT_GetActiveTake
 #include "reaper_plugin_functions.h"

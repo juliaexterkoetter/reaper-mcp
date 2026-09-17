@@ -45,3 +45,10 @@ retained GUID: always use the returned value. Locked items are rejected. Source
 files are never deleted. Trim and delete require confirmation. Fade tools set
 manual fades and disable the respective auto-fade. Partial host failures are
 reported with an instruction to inspect or Undo; no fake atomic rollback.
+
+## Takes
+
+`reaper_list_takes` and `reaper_get_active_take` accept an item GUID. Results
+include take GUID/name, source offset, playback rate and MIDI status. Empty
+items have no active take (null); a list is limited to 1000 takes. Take mutation
+and source file access are not exposed.

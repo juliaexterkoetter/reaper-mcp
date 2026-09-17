@@ -8,6 +8,7 @@ from reaper_mcp.config import Policy
 from reaper_mcp.tools.common import Bridge, register
 from reaper_mcp.tools.items import SPECS as ITEM_SPECS
 from reaper_mcp.tools.project import SPECS as PROJECT_SPECS
+from reaper_mcp.tools.takes import SPECS as TAKE_SPECS
 from reaper_mcp.tools.tracks import SPECS as TRACK_SPECS
 
 
@@ -30,7 +31,12 @@ def create_server(
         """Return local server and internal protocol versions."""
         return {"server_version": __version__, "protocol_version": PROTOCOL_VERSION}
 
-    register(server, bridge or BridgeClient(), policy, PROJECT_SPECS + TRACK_SPECS + ITEM_SPECS)
+    register(
+        server,
+        bridge or BridgeClient(),
+        policy,
+        PROJECT_SPECS + TRACK_SPECS + ITEM_SPECS + TAKE_SPECS,
+    )
     return server
 
 
