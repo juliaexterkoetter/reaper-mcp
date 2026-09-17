@@ -15,6 +15,17 @@ from reaper_mcp.tools.tracks import SPECS as TRACK_SPECS
 from reaper_mcp.tools.transport import SPECS as TRANSPORT_SPECS
 
 
+SPECS = (
+    PROJECT_SPECS
+    + TRACK_SPECS
+    + ITEM_SPECS
+    + TAKE_SPECS
+    + TRANSPORT_SPECS
+    + FX_SPECS
+    + MARKER_SPECS
+)
+
+
 def create_server(
     bridge: Bridge | None = None, policy: Policy = "confirm-destructive"
 ) -> MCPServer:
@@ -34,18 +45,7 @@ def create_server(
         """Return local server and internal protocol versions."""
         return {"server_version": __version__, "protocol_version": PROTOCOL_VERSION}
 
-    register(
-        server,
-        bridge or BridgeClient(),
-        policy,
-        PROJECT_SPECS
-        + TRACK_SPECS
-        + ITEM_SPECS
-        + TAKE_SPECS
-        + TRANSPORT_SPECS
-        + FX_SPECS
-        + MARKER_SPECS,
-    )
+    register(server, bridge or BridgeClient(), policy, SPECS)
     return server
 
 
