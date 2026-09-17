@@ -71,3 +71,12 @@ read the plugin-formatted value alongside the normalized value. Bypass and
 disable both set REAPER's enabled flag to false. Top-level normal track FX only:
 input/master/take FX and nested container children are planned. Plugin loading
 can invoke plugin UI and depends on third-party plugin stability.
+
+## Markers and regions
+
+List/create/update/delete are implemented using persistent GUIDs and the modern
+REAPER marker API. This release targets REAPER 7.80 or later (the pinned SDK
+baseline); older releases missing required APIs cannot load the extension.
+Updates provide the complete name/time range; deletion requires confirmation.
+Displayed marker numbers are informational, never identity selectors. Marker
+colors and lanes are preserved when updating existing markers.

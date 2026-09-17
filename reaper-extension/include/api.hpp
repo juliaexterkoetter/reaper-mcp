@@ -58,4 +58,12 @@
 #define REAPERAPI_WANT_TrackFX_Delete
 #define REAPERAPI_WANT_TrackFX_SetEnabled
 #define REAPERAPI_WANT_TrackFX_SetParamNormalized
+#define REAPERAPI_WANT_GetSetRegionOrMarkerInfo
+#define REAPERAPI_WANT_GetRegionOrMarkerInfo_Value
+#define REAPERAPI_WANT_GetRegionOrMarker
+#define REAPERAPI_WANT_GetNumRegionsOrMarkers
+#define REAPERAPI_WANT_SetRegionOrMarkerInfo_Value
+#define REAPERAPI_WANT_GetSetRegionOrMarkerInfo_String
+#define REAPERAPI_WANT_AddRegionOrMarker
+#define REAPERAPI_WANT_DeleteProjectMarkerByIndex
 #include "reaper_plugin_functions.h"

@@ -4,6 +4,7 @@
 #include "tracks.hpp"
 #include "transport.hpp"
 #include "fx.hpp"
+#include "markers.hpp"
 #include <cstring>
 #include <iostream>
 
@@ -74,6 +75,11 @@ int main() {
         args["plugin"]="not installed";
         try{dispatch("fx.add",args,"confirm-destructive");throw std::runtime_error("unknown plugin loaded");}
         catch(const Error& e){if(e.code!="PLUGIN_NOT_FOUND")throw;}
+        GetNumRegionsOrMarkers=[](ReaProject*){return 0;};add_marker_operations();
+        if(!dispatch("markers.list",args,"read-only").empty())throw std::runtime_error("empty markers failed");
+        args["name"]="Region";args["position_seconds"]=5;args["end_seconds"]=4;
+        try{dispatch("regions.create",args,"confirm-destructive");throw std::runtime_error("inverted region accepted");}
+        catch(const Error& e){if(e.code!="INVALID_PARAMETER")throw;}
         std::cout<<"Native project and track checks passed\n"; return 0;
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n'; return 1; }
 }
