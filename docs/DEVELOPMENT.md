@@ -1,14 +1,14 @@
 # Development
 
-Python 3.11+ (tested versions are in CI), Windows x64 REAPER 7 for runtime.
+Python 3.11+ (tested versions are in CI), Windows x64 REAPER 7.80+ for runtime.
 
 ```
 python -m venv .venv
 # Activate .venv using your shell
-python -m pip install -e ".[dev]"
+python -m pip install -c packaging/constraints.txt -e ".[dev]"
 pytest -q
-ruff check src tests
-ruff format --check src tests
+ruff check src tests scripts
+ruff format --check src tests scripts
 mypy src
 python -m build
 ```
@@ -25,3 +25,18 @@ SDK and nlohmann JSON are fetched by immutable commit; their notices ship with
 native artifacts. We only use the permissively licensed SDK headers, not the
 sample plugins' implementation code. Windows/MSVC CI is authoritative for DLL
 builds. A compile pass does not validate REAPER runtime behavior.
+
+Run `ctest --test-dir build/extension -C Release --output-on-failure` for native
+fixture tests. Frozen binary and Setup smoke tests run via
+`scripts/build_windows.ps1` after the native install step; they require Codex CLI
+on PATH and Inno Setup 6. See packaging/README.md.
+
+Python dependency versions are constrained in packaging/constraints.txt; SDK/JSON
+commits are immutable. CI OS images, compiler patches, Inno Setup and Codex CLI
+may evolve. Builds are repeatable workflows, not claimed byte-for-byte reproducible.
+Release assets include a resolved Python dependency manifest and SHA-256 sums.
+
+A tag `v0.1.0-alpha.1` starts the gated release workflow. It rebuilds and tests all
+artifacts before publishing a prerelease. Future releases must update Python,
+package-script and Inno versions together. Never label a stable release until
+the real host acceptance checklist is completed.

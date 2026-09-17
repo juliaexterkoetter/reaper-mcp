@@ -1,6 +1,6 @@
 # Architecture
 
-Status: implementation in progress; Windows x64 is the initial target.
+Status: implemented alpha; Windows x64 is the initial target. Real host acceptance remains outstanding.
 
 ```mermaid
 flowchart LR
@@ -40,7 +40,7 @@ The extension loads only the SDK functions explicitly requested by api.hpp and
 rejects incompatible hosts. Winsock IO never blocks: each timer accepts at most
 one peer and transfers at most 64 KiB per peer, with at most eight peers and a
 2-second lifetime. Frames are bounded to 1 MiB. The timer owns socket state and
-all future REAPER operations; no cross-thread pointer lifetime exists.
+all REAPER operations; no cross-thread pointer lifetime exists.
 Unloading unregisters the callback before closing peers/listener and deleting
 owned discovery. MCP termination does not affect REAPER. An exclusive Windows file handle
 prevents a second instance or installer from owning the same resource directory.
