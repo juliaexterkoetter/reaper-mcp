@@ -59,3 +59,15 @@ Implemented: play, stop, pause, get play state, get/set edit cursor. Cursor
 positions use seconds and do not seek playback unless explicitly requested.
 Repeated pause calls do not resume playback. Transport is excluded from Undo.
 Read-only policy blocks transport changes as well as project edits.
+
+## FX
+
+Implemented: installed-plugin discovery, track FX list/get/add/remove,
+enable/disable/bypass, parameter list/get/set. Plugins must match an enumerated
+identifier or unique exact name; no FXADD, arbitrary paths or chain loading.
+FX instances use GUIDs; parameter indices are checked against current counts.
+Parameters use normalized 0..1 because units/scales differ between plugins;
+read the plugin-formatted value alongside the normalized value. Bypass and
+disable both set REAPER's enabled flag to false. Top-level normal track FX only:
+input/master/take FX and nested container children are planned. Plugin loading
+can invoke plugin UI and depends on third-party plugin stability.

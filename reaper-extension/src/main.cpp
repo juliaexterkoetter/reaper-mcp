@@ -6,6 +6,7 @@
 #include "items.hpp"
 #include "takes.hpp"
 #include "transport.hpp"
+#include "fx.hpp"
 
 namespace {
 reaper_plugin_info_t* host = nullptr;
@@ -28,6 +29,7 @@ extern "C" REAPER_PLUGIN_DLL_EXPORT int REAPER_PLUGIN_ENTRYPOINT(
         rmcp::add_item_operations();
         rmcp::add_take_operations();
         rmcp::add_transport_operations();
+        rmcp::add_fx_operations();
         bridge.dispatch = [](const std::string& m,const rmcp::json& p) { return rmcp::dispatch(m,p,bridge.policy); };
         bridge.start(std::filesystem::u8path(GetResourcePath()) / "ReaperMCP");
         host = info;

@@ -3,6 +3,7 @@
 #include "adapter.hpp"
 #include "tracks.hpp"
 #include "transport.hpp"
+#include "fx.hpp"
 #include <cstring>
 #include <iostream>
 
@@ -66,6 +67,13 @@ int main() {
         if(!(playback&2))throw std::runtime_error("pause toggled playback");
         dispatch("transport.stop",args,"confirm-destructive");
         if(playback)throw std::runtime_error("stop failed");
+        EnumInstalledFX=[](int i,const char** n,const char** id){if(i>0)return false;*n="VST: Test";*id="test.dll";return true;};
+        add_fx_operations();
+        auto available=dispatch("fx.available",json{{"query","TEST"}},"read-only");
+        if(available.at("total")!=1)throw std::runtime_error("plugin discovery failed");
+        args["plugin"]="not installed";
+        try{dispatch("fx.add",args,"confirm-destructive");throw std::runtime_error("unknown plugin loaded");}
+        catch(const Error& e){if(e.code!="PLUGIN_NOT_FOUND")throw;}
         std::cout<<"Native project and track checks passed\n"; return 0;
     } catch(const std::exception& e) { std::cerr<<e.what()<<'\n'; return 1; }
 }
