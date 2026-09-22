@@ -1,6 +1,9 @@
 # Architecture
 
-Status: implemented alpha; Windows x64 is the initial target. Real host acceptance remains outstanding.
+Status: implemented alpha on Windows x64 and Linux x86_64. Platform primitives
+(sockets, single-instance locking, link and network-filesystem detection) sit
+behind reaper-extension/include/platform.hpp. Real host acceptance on Windows
+remains outstanding.
 
 ```mermaid
 flowchart LR

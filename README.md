@@ -1,13 +1,16 @@
 # REAPER MCP
 
 Control a local REAPER project from Codex or another MCP client through a native
-C++ extension and the official Python MCP SDK. Windows 10/11 x64 is the first target.
-No ReaScript installation, web server, audio upload, or Python installation is
-required when using the standalone Windows installer.
+C++ extension and the official Python MCP SDK. Windows 10/11 x64 and Linux x86_64
+are supported. No ReaScript installation, web server, audio upload, or Python
+installation is required when using the standalone Windows installer.
 
 **Status: 0.1.0-alpha.1.** Automated Python, native and packaging tests are provided.
 Real REAPER + Codex + third-party plugin acceptance must still be verified on a
 Windows workstation. Do not treat this alpha as a production-certified DAW tool.
+
+Linux has no packaged installer: build the extension from source and install it
+with the CLI, as [Installation](docs/INSTALLATION.md) describes.
 
 [Releases](https://github.com/juliaexterkoetter/reaper-mcp/releases) ·
 [CI](https://github.com/juliaexterkoetter/reaper-mcp/actions) ·
@@ -61,7 +64,7 @@ Use the supplied test project or a disposable copy for initial acceptance.
 | Environment | Versions, sample rates, resource paths, FX chains/templates discovery | Discovery only; preset application planned |
 | Administration | Install/uninstall, doctor/status/version/logs, official Codex registration | `update` points to releases; no unattended updater |
 
-Semantic mixing, LUFS/true-peak analysis, video, Linux/macOS/ARM runtime support,
+Semantic mixing, LUFS/true-peak analysis, video, macOS and ARM runtime support,
 master/input/take FX and multi-instance selection are **planned**.
 See [Roadmap](docs/ROADMAP.md) for the acceptance gate before a stable release.
 
@@ -75,7 +78,7 @@ flowchart LR
 ```
 
 The native bridge binds only `127.0.0.1` on an ephemeral port. Requests require a
-per-installation secret stored with private Windows ACLs. There is no arbitrary
+per-installation secret stored with a private Windows ACL or POSIX mode 0700. There is no arbitrary
 shell, ReaScript, generic REAPER action, or remotely exposed HTTP endpoint. All
 REAPER API access runs on its main thread. Requests are bounded and mutations are
 never automatically retried after a timeout.
@@ -99,12 +102,18 @@ pytest -q
 python -m build
 ```
 
-Native build requires Windows x64, CMake and MSVC:
+Native build requires CMake plus MSVC on Windows x64 or GCC/Clang on Linux x86_64:
 
 ```powershell
 cmake -S reaper-extension -B build/extension -A x64
 cmake --build build/extension --config Release
 ctest --test-dir build/extension -C Release --output-on-failure
+```
+
+```bash
+cmake -S reaper-extension -B build/extension -DCMAKE_BUILD_TYPE=Release
+cmake --build build/extension --parallel
+ctest --test-dir build/extension --output-on-failure
 ```
 
 Mocks and synthetic installation fixtures are confined to tests. The CI builds
