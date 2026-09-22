@@ -59,6 +59,11 @@ install(FILES ${reaper_sdk_SOURCE_DIR}/sdk/LICENSE DESTINATION licenses RENAME R
 install(FILES ${json_SOURCE_DIR}/LICENSE.MIT DESTINATION licenses RENAME nlohmann-json.txt)
 include(CTest)
 if(BUILD_TESTING)
+  add_executable(platform_test tests/platform_test.cpp)
+  target_include_directories(platform_test PRIVATE include)
+  rmcp_configure(platform_test)
+  add_test(NAME platform_primitives COMMAND platform_test)
+
   add_executable(bridge_test tests/bridge_test.cpp)
   target_include_directories(bridge_test PRIVATE include)
   rmcp_configure(bridge_test)
