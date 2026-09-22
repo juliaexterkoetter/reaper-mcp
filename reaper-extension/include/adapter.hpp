@@ -29,7 +29,7 @@ inline void refresh_projects() {
     std::set<ReaProject*> live;
     for (int i=0; auto* p = EnumProjects(i,nullptr,0); ++i) {
         live.insert(p);
-        if (!project_ids.count(p)) project_ids[p] = std::to_string(GetCurrentProcessId())+"-"+std::to_string(++next_project);
+        if (!project_ids.count(p)) project_ids[p] = std::to_string(platform::process_id())+"-"+std::to_string(++next_project);
     }
     for (auto it=project_ids.begin();it!=project_ids.end();)
         if (!live.count(it->first)) it=project_ids.erase(it); else ++it;

@@ -80,12 +80,12 @@ inline void add_render_operations() {
         if(p.contains("output_directory") && !p.at("output_directory").is_null()) parent=std::filesystem::u8path(text(p,"output_directory",32700));
         else {auto configured=project_string(proj,"RENDER_FILE");parent=configured.empty()?std::filesystem::path("renders"):std::filesystem::u8path(configured);
             if(parent.is_relative())parent=std::filesystem::u8path(path).parent_path()/parent;}
-        if(!parent.is_absolute() || parent.u8string().rfind("\\\\",0)==0 || GetDriveTypeW(parent.root_path().c_str())==DRIVE_REMOTE)
+        if(!parent.is_absolute() || platform::is_network_path(parent))
             throw Error("INVALID_PATH","Render output must be an absolute local filesystem directory");
         std::filesystem::create_directories(parent);parent=std::filesystem::canonical(parent);
-        if(parent.u8string().rfind("\\\\",0)==0 || GetDriveTypeW(parent.root_path().c_str())==DRIVE_REMOTE)
+        if(platform::is_network_path(parent))
             throw Error("INVALID_PATH","Resolved render output must remain on a local filesystem");
-        auto name="reaper-mcp-"+std::to_string(GetCurrentProcessId())+"-"+std::to_string(GetTickCount64());auto root=parent/name;
+        auto name="reaper-mcp-"+std::to_string(platform::process_id())+"-"+std::to_string(platform::tick_count());auto root=parent/name;
         if(!std::filesystem::create_directory(root))throw Error("OUTPUT_EXISTS","Output reservation failed; inspect before retrying");
         render_job={{"state","queued"},{"job_id",name},{"output_directory",root.u8string()}};pending_render=p;return render_job;
     }};

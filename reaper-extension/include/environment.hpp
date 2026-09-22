@@ -3,15 +3,14 @@
 namespace rmcp {
 inline json resource_files(const std::filesystem::path& root,const std::string& extension) {
     json files=json::array();std::error_code ec;bool truncated=false;int visited=0;
-    auto root_attr=GetFileAttributesW(root.c_str());
-    if(root_attr!=INVALID_FILE_ATTRIBUTES && (root_attr&FILE_ATTRIBUTE_REPARSE_POINT))
+    if(platform::inspect(root).symlink)
         return {{"files",files},{"truncated",false},{"read_error",true}};
     auto it=std::filesystem::recursive_directory_iterator(root,std::filesystem::directory_options::skip_permission_denied,ec);
     const auto end=std::filesystem::recursive_directory_iterator();
     for(;it!=end && !ec;it.increment(ec)){
         if(++visited>10000 || files.size()>=500){truncated=true;break;}
-        auto attr=GetFileAttributesW(it->path().c_str());
-        if(attr==INVALID_FILE_ATTRIBUTES || (attr&FILE_ATTRIBUTE_REPARSE_POINT)) {it.disable_recursion_pending();continue;}
+        auto kind=platform::inspect(it->path());
+        if(!kind.readable || kind.symlink) {it.disable_recursion_pending();continue;}
         if(it->is_regular_file(ec) && lowercase(it->path().extension().u8string())==extension)
             files.push_back(it->path().lexically_relative(root).u8string());
     }

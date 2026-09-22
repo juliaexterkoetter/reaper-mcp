@@ -3,7 +3,7 @@
 
 int main() {
     using namespace rmcp;
-    auto dir = std::filesystem::temp_directory_path() / ("rmcp-test-"+std::to_string(GetCurrentProcessId()));
+    auto dir = std::filesystem::temp_directory_path() / ("rmcp-test-"+std::to_string(rmcp::platform::process_id()));
     std::filesystem::create_directories(dir);
     try {
         std::ofstream(dir / "config.json") << json{{"token",std::string(64,'a')},{"policy","read-only"}};
