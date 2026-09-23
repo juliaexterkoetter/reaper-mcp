@@ -11,7 +11,10 @@ from zipfile import ZipFile
 
 
 def run(*args: str) -> None:
-    subprocess.run(args, check=True)
+    executable = shutil.which(args[0])
+    if executable is None:
+        raise FileNotFoundError(f"Command not found: {args[0]}")
+    subprocess.run((executable, *args[1:]), check=True)
 
 
 def prepare_manifest(source: Path, destination: Path, version: str) -> None:
@@ -99,8 +102,8 @@ def main() -> None:
         shutil.copy2(executable, server / "reaper-mcp.exe")
         shutil.copytree(internal, server / "_internal")
 
-        run("mcpb", "validate", str(staging))
-        run("mcpb", "pack", str(staging), str(output))
+        run("npx", "--yes", "@anthropic-ai/mcpb@2.1.2", "validate", str(staging))
+        run("npx", "--yes", "@anthropic-ai/mcpb@2.1.2", "pack", str(staging), str(output))
 
     validate_archive(output)
 

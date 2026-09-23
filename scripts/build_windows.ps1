@@ -13,9 +13,6 @@ $ReleasePrefix = "reaper-mcp-$Version-windows-x64"
 python -m pip install -c packaging/constraints.txt 'pyinstaller==6.22.3'
 if ($LASTEXITCODE) { throw 'PyInstaller installation failed' }
 
-npm install -g @anthropic-ai/mcpb@2.1.2
-if ($LASTEXITCODE) { throw 'MCPB CLI installation failed' }
-
 python scripts/collect_licenses.py build/licenses
 if ($LASTEXITCODE) { throw 'License collection failed' }
 
