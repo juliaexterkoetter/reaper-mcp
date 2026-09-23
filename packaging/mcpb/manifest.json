@@ -1,0 +1,41 @@
+{
+  "manifest_version": "0.3",
+  "name": "reaper-mcp",
+  "display_name": "REAPER MCP",
+  "version": "0.1.0-alpha.1",
+  "description": "Local MCP control of REAPER through a native extension",
+  "author": {
+    "name": "Julia Exterkoetter"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/juliaexterkoetter/reaper-mcp.git"
+  },
+  "homepage": "https://github.com/juliaexterkoetter/reaper-mcp",
+  "documentation": "https://github.com/juliaexterkoetter/reaper-mcp/tree/main/docs",
+  "support": "https://github.com/juliaexterkoetter/reaper-mcp/issues",
+  "license": "MIT",
+  "keywords": [
+    "reaper",
+    "audio",
+    "mcp",
+    "automation",
+    "daw"
+  ],
+  "server": {
+    "type": "binary",
+    "entry_point": "server/reaper-mcp.exe",
+    "mcp_config": {
+      "command": "${__dirname}/server/reaper-mcp.exe",
+      "args": [
+        "serve"
+      ],
+      "env": {}
+    }
+  },
+  "compatibility": {
+    "platforms": [
+      "win32"
+    ]
+  }
+}
