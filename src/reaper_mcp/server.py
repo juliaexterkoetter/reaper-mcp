@@ -1,6 +1,7 @@
 """Official MCP SDK entry point. Stdout is reserved for MCP messages."""
 
 from mcp.server import MCPServer
+from mcp.types import ToolAnnotations
 from pydantic import ValidationError
 
 from reaper_mcp import PROTOCOL_VERSION, __version__
@@ -42,12 +43,26 @@ def create_server(
         "Request user approval before destructive operations. Never retry timed-out mutations.",
     )
 
-    @server.tool()
+    @server.tool(
+        annotations=ToolAnnotations(
+            read_only_hint=True,
+            destructive_hint=False,
+            idempotent_hint=True,
+            open_world_hint=False,
+        )
+    )
     def reaper_ping() -> dict[str, str]:
         """Check the MCP process only; use status to check the native REAPER bridge."""
         return {"status": "ok", "component": "mcp-server"}
 
-    @server.tool()
+    @server.tool(
+        annotations=ToolAnnotations(
+            read_only_hint=True,
+            destructive_hint=False,
+            idempotent_hint=True,
+            open_world_hint=False,
+        )
+    )
     def reaper_get_server_info() -> dict[str, str | int]:
         """Return local server and internal protocol versions."""
         return {"server_version": __version__, "protocol_version": PROTOCOL_VERSION}
@@ -67,4 +82,5 @@ def serve() -> None:
             raise
     except (OSError, ValidationError) as exc:
         raise BridgeError("INVALID_CONFIGURATION", "Run reaper-mcp doctor.") from exc
+
     create_server(policy=policy).run()
