@@ -15,7 +15,12 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from reaper_mcp import __version__
 from reaper_mcp.bridge.errors import BridgeError
 from reaper_mcp.config import BridgeConfig, Policy, data_dir
-from reaper_mcp.install.detection import detect_reaper, pe_architecture
+from reaper_mcp.install.detection import (
+    EXTENSION_NAME,
+    detect_reaper,
+    host_architecture,
+    module_architecture,
+)
 from reaper_mcp.install.security import reject_link, secure_directory
 
 
@@ -59,7 +64,7 @@ def load_record(home: Path | None = None) -> InstallRecord | None:
         record = InstallRecord.model_validate_json(path.read_bytes())
         root = Path(record.resource_dir)
         expected = {
-            str(root / "UserPlugins" / "reaper_mcp.dll"),
+            str(root / "UserPlugins" / EXTENSION_NAME),
             str(root / "ReaperMCP" / "config.json"),
         }
         if not root.is_absolute() or set(record.files) != expected:
@@ -129,8 +134,11 @@ def _install_files(
 ) -> InstallRecord:
     home = home or data_dir()
     resource = resource.resolve()
-    if pe_architecture(extension) != "x64":
-        raise BridgeError("UNSUPPORTED_ARCHITECTURE", "The extension must be a Windows x64 DLL.")
+    expected = host_architecture()
+    if module_architecture(extension) != expected:
+        raise BridgeError(
+            "UNSUPPORTED_ARCHITECTURE", f"The extension must be a {expected} {EXTENSION_NAME}."
+        )
     record = load_record(home)
     if record and Path(record.resource_dir) != resource:
         raise BridgeError(
@@ -141,7 +149,7 @@ def _install_files(
     reject_link(private)
     if record:
         verify_owned(record)
-    targets = (plugins / "reaper_mcp.dll", private / "config.json")
+    targets = (plugins / EXTENSION_NAME, private / "config.json")
     for path in targets:
         reject_link(path)
         if path.exists() and not record:
@@ -189,11 +197,11 @@ def _install_files(
 
 def bundled_extension() -> Path:
     root = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
-    path = root / "native" / "reaper_mcp.dll"
+    path = root / "native" / EXTENSION_NAME
     if not path.is_file():
         raise BridgeError(
             "EXTENSION_NOT_BUNDLED",
-            "Use the Windows release bundle, or pass --extension after building the DLL.",
+            f"Use a release bundle, or pass --extension after building {EXTENSION_NAME}.",
         )
     return path
 
@@ -204,8 +212,10 @@ def install(
     extension: Path | None = None,
     policy: Policy | None = None,
 ) -> InstallRecord:
-    if os.name != "nt":
-        raise BridgeError("UNSUPPORTED_PLATFORM", "Installation currently requires Windows x64.")
+    if os.name != "nt" and not sys.platform.startswith("linux"):
+        raise BridgeError(
+            "UNSUPPORTED_PLATFORM", "Installation currently requires Windows or Linux."
+        )
     executable, resource = detect_reaper(reaper_path, resource)
     return install_files(executable, resource, extension or bundled_extension(), policy)
 

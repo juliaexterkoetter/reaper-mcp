@@ -10,7 +10,7 @@ bool escape_target=false,create_output=true;
 int render_calls=0;
 int main(){
     using namespace rmcp;
-    base=std::filesystem::temp_directory_path()/("rmcp-render-test-"+std::to_string(GetCurrentProcessId()));
+    base=std::filesystem::temp_directory_path()/("rmcp-render-test-"+std::to_string(rmcp::platform::process_id()));
     std::filesystem::create_directories(base);
     EnumProjects=[](int i,char* out,int size)->ReaProject*{
         auto path=(base/"test.rpp").u8string();
