@@ -33,13 +33,16 @@ inline void validate_render(ReaProject* proj) {
         throw Error("UNSUPPORTED_RENDER_ACTION","This REAPER build/language does not expose the verified render action");
 }
 struct RestoreRender {
-    ReaProject* proj;std::string file,pattern,extra;
+    ReaProject* proj;std::string file,pattern,extra;double sample_rate;
     explicit RestoreRender(ReaProject* p):proj(p),file(project_string(p,"RENDER_FILE")),
-        pattern(project_string(p,"RENDER_PATTERN")),extra(project_string(p,"RENDER_EXTRAFILEDIR")){}
+        pattern(project_string(p,"RENDER_PATTERN")),extra(project_string(p,"RENDER_EXTRAFILEDIR")),
+        sample_rate(GetSetProjectInfo(p,"RENDER_SRATE",0,false)){}
     ~RestoreRender(){
         GetSetProjectInfo_String(proj,"RENDER_FILE",file.data(),true);
         GetSetProjectInfo_String(proj,"RENDER_PATTERN",pattern.data(),true);
         GetSetProjectInfo_String(proj,"RENDER_EXTRAFILEDIR",extra.data(),true);
+        // The render action resolves an automatic rate (0) to the device rate.
+        GetSetProjectInfo(proj,"RENDER_SRATE",sample_rate,true);
     }
 };
 inline void run_pending_render() {
@@ -52,6 +55,9 @@ inline void run_pending_render() {
         set_project_string(proj,"RENDER_PATTERN","render");
         set_project_string(proj,"RENDER_EXTRAFILEDIR",root.u8string());
         auto targets=project_string(proj,"RENDER_TARGETS");
+        // REAPER 7.84 can terminate its semicolon-separated list with a delimiter.
+        // Remove only that terminator; empty or additional entries remain invalid.
+        if(!targets.empty() && targets.back()==';')targets.pop_back();
         // Exactly one primary output, entirely inside the newly-created directory.
         if(targets.empty() || targets.find(';')!=std::string::npos)throw Error("UNSAFE_RENDER_TARGET","Expected one render target");
         auto target=std::filesystem::u8path(targets).lexically_normal();
