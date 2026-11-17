@@ -33,7 +33,17 @@ cmake --install build/extension --prefix dist/native
 
 The module must be named reaper_mcp.so and export only ReaperPluginEntry; the
 Linux CI job checks both, because a mismatch only surfaces when REAPER fails to
-load the extension.
+load the extension. The same job runs `tests/unit/test_instance_lock.py` with
+`RMCP_PLATFORM_TEST` pointing at the built `platform_test`, so the Python installer
+is checked against the real native lock in separate processes, and
+`scripts/smoke_linux_install.py`, an install/reinstall/uninstall lifecycle with
+the built module and a synthetic REAPER executable (a fixture, not host
+acceptance). Locally:
+
+```
+RMCP_PLATFORM_TEST=$PWD/build/extension/platform_test pytest -q tests/unit/test_instance_lock.py
+python scripts/smoke_linux_install.py dist/native/reaper_mcp.so build/extension/platform_test
+```
 
 SDK and nlohmann JSON are fetched by immutable commit; their notices ship with
 native artifacts. We only use the permissively licensed SDK headers, not the

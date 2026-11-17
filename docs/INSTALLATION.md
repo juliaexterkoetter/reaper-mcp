@@ -1,7 +1,8 @@
 # Installation
 
-Windows 10/11 x64 and Linux x86_64 with REAPER 7.80+ are the supported runtime
-targets. Runtime acceptance is still experimental. Python developers can install
+Windows 10/11 x64 with REAPER 7.80+ is the supported runtime target; Linux
+x86_64 is experimental until it has real REAPER 7.80+ acceptance. Runtime
+acceptance is still experimental on both. Python developers can install
 the source package with `python -m pip install .`; a public PyPI release is not
 currently published.
 
@@ -10,7 +11,9 @@ DEVELOPMENT.md describes, close REAPER, then run `reaper-mcp install --extension
 dist/native/reaper_mcp.so`. Detection finds the usual REAPER locations and reads
 the resource directory from `$XDG_CONFIG_HOME/REAPER`; pass `--reaper-path` or
 `--resource-dir` for anything unusual. A launcher script named `reaper` on the
-PATH is skipped in favour of the real binary.
+PATH is skipped in favour of the real binary. The resource directory's
+`ReaperMCP/instance.lock` is permanent on Linux: the extension and the installer
+lock that one file, and uninstallation leaves it in place.
 
 The Windows standalone release bundle includes Python and the native DLL.
 Download the `windows-x64-setup.exe` from GitHub Releases and run it as your normal

@@ -22,6 +22,8 @@ those if necessary. Never share `ReaperMCP/config.json`, which contains the toke
 | PROJECT_CHANGED | A project tab changed. Inspect the project again and use its new session ID. |
 | AMBIGUOUS_TRACK | Read tracks and use the specific GUID, not the duplicated name. |
 | BRIDGE_TIMEOUT | An edit may already have happened. Inspect state or use Undo; never automatically repeat an edit. Native rendering can block status temporarily. |
+| INVALID_PATH (render) | The render directory is on a network share or on a filesystem that cannot be verified as local (on Linux: sshfs or other FUSE mounts, unrecognised filesystems). Choose a directory on a local disk. |
+| INSTALLER_BUSY / UNSAFE_PATH (instance.lock) | Close REAPER and any other installer. UNSAFE_PATH means `ReaperMCP/instance.lock` is a link or not a regular file; inspect it before removing it. |
 | UNSUPPORTED_CAPABILITY | The running DLL does not expose that method. Check versions and restart REAPER after upgrades. |
 
 Only one REAPER instance may own a given resource directory. A second instance

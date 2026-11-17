@@ -1,8 +1,8 @@
 # REAPER MCP
 
 Control a local REAPER project from Codex or another MCP client through a native
-C++ extension and the official Python MCP SDK. Windows 10/11 x64 and Linux x86_64
-are supported. No ReaScript installation, web server, audio upload, or Python
+C++ extension and the official Python MCP SDK. Windows 10/11 x64 is supported;
+Linux x86_64 is experimental. No ReaScript installation, web server, audio upload, or Python
 installation is required when using the standalone Windows installer.
 
 **Status: 0.1.0-alpha.1.** Automated Python, native and packaging tests are provided.
@@ -11,8 +11,9 @@ WAV rendering. Coverage is limited to disposable synthetic audio and Cockos
 ReaEQ; broader plugin, client and clean-machine installer acceptance remains
 outstanding. Do not treat this alpha as a production-certified DAW tool.
 
-Linux has no packaged installer: build the extension from source and install it
-with the CLI, as [Installation](docs/INSTALLATION.md) describes.
+Linux is experimental: it has no packaged installer and has not yet had real
+REAPER acceptance on a supported (7.80+) host. Build the extension from source
+and install it with the CLI, as [Installation](docs/INSTALLATION.md) describes.
 
 [Releases](https://github.com/juliaexterkoetter/reaper-mcp/releases) ·
 [CI](https://github.com/juliaexterkoetter/reaper-mcp/actions) ·

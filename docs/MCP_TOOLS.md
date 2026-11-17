@@ -104,6 +104,15 @@ format and no add-to-project. Other modes fail closed. The built-in action is
 verified by its English description at runtime; localized descriptions that do
 not match are rejected. No arbitrary action tool is exposed.
 
+The output directory must be on storage positively identified as local, both as
+given and after links are resolved; otherwise render.start fails with
+`INVALID_PATH` before anything is created. Network shares are rejected, and so is
+anything unidentifiable. On Linux that means a recognised local filesystem (ext4,
+xfs, btrfs, zfs, tmpfs and similar) or a block-device FUSE mount such as ntfs-3g;
+sshfs, rclone and other network FUSE mounts, stacking FUSE filesystems such as
+bindfs, and unrecognised filesystems are refused. On Windows, UNC paths, remote
+drives and drives of unknown type are refused.
+
 The initial response is `queued`, not success. Native render may block REAPER's
 timer; status calls can time out while busy. Retry read-only status later, never
 repeat render.start on uncertainty. `output-produced` means a nonempty file was
