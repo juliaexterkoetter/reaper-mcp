@@ -1,7 +1,10 @@
 # Architecture
 
-Status: implemented alpha; Windows x64 is the initial target. Limited local
-acceptance has run on REAPER 7.84/x64; see VALIDATION.md for scope.
+Status: implemented alpha on Windows x64; Linux x86_64 integration is experimental.
+Limited local acceptance has run on REAPER 7.84/x64; see VALIDATION.md for scope.
+Platform primitives (sockets, single-instance locking, link and network-filesystem
+detection) sit behind reaper-extension/include/platform.hpp.
+Linux functional host acceptance remains incomplete.
 
 ```mermaid
 flowchart LR

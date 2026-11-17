@@ -1,6 +1,6 @@
 #pragma once
-#include <winsock2.h>
-#include <ws2tcpip.h>
+#include "platform.hpp"
+#include <algorithm>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -18,35 +18,35 @@ struct Error : std::runtime_error {
 constexpr size_t max_frame = 1024 * 1024;
 class Bridge {
     struct Peer {
-        SOCKET socket;
+        platform::socket_t socket = platform::invalid_socket;
         std::string input, output;
         size_t sent = 0;
         std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
     };
-    SOCKET listener = INVALID_SOCKET;
-    HANDLE instance_lock = INVALID_HANDLE_VALUE;
+    platform::socket_t listener = platform::invalid_socket;
+    platform::lock_t instance_lock = platform::invalid_lock;
     std::vector<Peer> peers;
-    std::filesystem::path discovery;
+    std::filesystem::path discovery, lock_path;
     std::string token;
-    bool winsock = false;
+    bool networking = false;
 public:
     std::string policy;
     std::function<json(const std::string&, const json&)> dispatch;
     ~Bridge() { stop(); }
     void stop() noexcept {
-        for (auto& p : peers) closesocket(p.socket);
+        for (auto& p : peers) platform::close_socket(p.socket);
         peers.clear();
-        if (listener != INVALID_SOCKET) closesocket(listener);
-        listener = INVALID_SOCKET;
+        if (listener != platform::invalid_socket) platform::close_socket(listener);
+        listener = platform::invalid_socket;
         if (!discovery.empty()) {
             std::error_code ec;
             std::filesystem::remove(discovery, ec);
             discovery.clear();
         }
-        if (instance_lock != INVALID_HANDLE_VALUE) CloseHandle(instance_lock);
-        instance_lock = INVALID_HANDLE_VALUE;
-        if (winsock) WSACleanup();
-        winsock = false;
+        platform::release_lock(instance_lock, lock_path);
+        lock_path.clear();
+        if (networking) platform::cleanup();
+        networking = false;
     }
     void start(const std::filesystem::path& root) {
         std::ifstream file(root / "config.json");
@@ -56,34 +56,32 @@ public:
         if (token.size() != 64 || token.find_first_not_of("0123456789abcdef") != std::string::npos ||
             (policy != "read-only" && policy != "confirm-destructive" && policy != "full-control"))
             throw Error("INVALID_CONFIGURATION", "Invalid configuration");
-        // Share mode zero serializes instances and installers. The OS releases this
-        // handle after crashes, so stale discovery can safely be replaced.
-        instance_lock = CreateFileW((root / "instance.lock").c_str(), GENERIC_READ | GENERIC_WRITE,
-            0, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, nullptr);
-        if (instance_lock == INVALID_HANDLE_VALUE)
+        // A single exclusive lock serializes instances and installers. The OS
+        // releases it after crashes, so stale discovery can safely be replaced.
+        lock_path = root / "instance.lock";
+        instance_lock = platform::acquire_lock(lock_path);
+        if (instance_lock == platform::invalid_lock)
             throw Error("INSTANCE_CONFLICT", "Another REAPER instance or installer owns this resource directory");
         std::error_code ec;
         std::filesystem::remove(root / "bridge.json", ec);
         if(ec) throw Error("DISCOVERY_ERROR", "Cannot remove stale discovery");
-        WSADATA data{};
-        if (WSAStartup(MAKEWORD(2,2), &data)) throw Error("NETWORK_ERROR", "WSAStartup failed");
-        winsock = true;
-        listener = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-        if (listener == INVALID_SOCKET) throw Error("NETWORK_ERROR", "socket failed");
-        u_long nonblocking = 1;
-        if (ioctlsocket(listener, FIONBIO, &nonblocking)) throw Error("NETWORK_ERROR", "nonblocking failed");
+        if (!platform::startup()) throw Error("NETWORK_ERROR", "Socket startup failed");
+        networking = true;
+        listener = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        if (listener == platform::invalid_socket) throw Error("NETWORK_ERROR", "socket failed");
+        if (!platform::set_nonblocking(listener)) throw Error("NETWORK_ERROR", "nonblocking failed");
         sockaddr_in addr{};
         addr.sin_family = AF_INET;
         addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-        if (bind(listener, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) || listen(listener, 8))
+        if (::bind(listener, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) || ::listen(listener, 8))
             throw Error("NETWORK_ERROR", "bind failed");
-        int size = sizeof(addr);
-        if (getsockname(listener, reinterpret_cast<sockaddr*>(&addr), &size))
+        platform::socklen_arg size = sizeof(addr);
+        if (::getsockname(listener, reinterpret_cast<sockaddr*>(&addr), &size))
             throw Error("NETWORK_ERROR", "getsockname failed");
         discovery = root / "bridge.json";
         auto temp = root / "bridge.tmp";
         std::ofstream out(temp, std::ios::binary);
-        out << json{{"protocol_version",1},{"pid",GetCurrentProcessId()},
+        out << json{{"protocol_version",1},{"pid",platform::process_id()},
                     {"port",ntohs(addr.sin_port)}}.dump();
         out.close();
         if (!out) throw Error("DISCOVERY_ERROR", "Cannot write discovery");
@@ -117,36 +115,36 @@ public:
         }
     }
     void tick() {
-        if (listener == INVALID_SOCKET) return;
+        if (listener == platform::invalid_socket) return;
         // Work bounded to 8 connections and 64 KiB per connection per timer tick.
         if (peers.size() < 8) {
-            SOCKET s = accept(listener, nullptr, nullptr);
-            if (s != INVALID_SOCKET) {
-                u_long mode = 1;
-                if (ioctlsocket(s, FIONBIO, &mode)) closesocket(s);
-                else peers.push_back(Peer{s});
+            platform::socket_t s = ::accept(listener, nullptr, nullptr);
+            if (s != platform::invalid_socket) {
+                if (!platform::set_nonblocking(s)) platform::close_socket(s);
+                else { platform::suppress_sigpipe(s); peers.emplace_back().socket = s; }
             }
         }
         for (auto it = peers.begin(); it != peers.end();) {
             bool close = std::chrono::steady_clock::now()-it->start > std::chrono::seconds(2);
             if (!close && it->output.empty()) {
                 char buf[65536];
-                int n = recv(it->socket, buf, sizeof(buf), 0);
+                auto n = ::recv(it->socket, buf, static_cast<platform::iolen_t>(sizeof(buf)), 0);
                 if (n > 0) {
-                    it->input.append(buf, n);
+                    it->input.append(buf, static_cast<size_t>(n));
                     if (it->input.size() > max_frame) close = true;
                     else if (it->input.find('\n') != std::string::npos)
                         it->output = respond(it->input.substr(0,it->input.find('\n')));
-                } else if (!n || WSAGetLastError() != WSAEWOULDBLOCK) close = true;
+                } else if (!n || !platform::would_block()) close = true;
             }
             if (!close && !it->output.empty()) {
-                int n = send(it->socket, it->output.data()+it->sent,
-                    static_cast<int>(std::min(size_t(65536),it->output.size()-it->sent)), 0);
-                if (n > 0) it->sent += n;
-                else if (!n || WSAGetLastError() != WSAEWOULDBLOCK) close = true;
+                auto n = ::send(it->socket, it->output.data()+it->sent,
+                    static_cast<platform::iolen_t>(std::min(size_t(65536),it->output.size()-it->sent)),
+                    platform::send_flags);
+                if (n > 0) it->sent += static_cast<size_t>(n);
+                else if (!n || !platform::would_block()) close = true;
                 if (it->sent == it->output.size()) close = true;
             }
-            if (close) { closesocket(it->socket); it = peers.erase(it); }
+            if (close) { platform::close_socket(it->socket); it = peers.erase(it); }
             else ++it;
         }
     }

@@ -29,6 +29,28 @@ jobs:
       - run: mypy src
       - run: pytest -q
       - run: python -m build
+  native-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake -S reaper-extension -B build/extension -DCMAKE_BUILD_TYPE=Release
+      - run: cmake --build build/extension --parallel
+      - run: ctest --test-dir build/extension --output-on-failure --timeout 60
+      - run: cmake --install build/extension --prefix dist/native
+      # REAPER resolves reaper_*.so by file name, and the module must expose the
+      # entry point and nothing else. A silent rename or a leaked symbol would
+      # otherwise only surface when a user loads the extension.
+      - name: Verify the module layout REAPER expects
+        run: |
+          test -f dist/native/reaper_mcp.so
+          exported=$(nm -D --defined-only dist/native/reaper_mcp.so | awk '$2=="T"{print $3}')
+          test "$exported" = "ReaperPluginEntry" || { echo "unexpected exports: $exported"; exit 1; }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reaper-mcp-native-linux-x86_64
+          path: dist/native
+
   native:
     runs-on: windows-latest
     timeout-minutes: 20
