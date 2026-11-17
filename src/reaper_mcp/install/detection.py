@@ -11,6 +11,7 @@ from reaper_mcp.bridge.errors import BridgeError
 
 EXECUTABLE_NAME = "reaper.exe" if os.name == "nt" else "reaper"
 EXTENSION_NAME = "reaper_mcp.dll" if os.name == "nt" else "reaper_mcp.so"
+_ELF64_HEADER_SIZE = 64
 # platform.machine() spells the same architecture differently per OS.
 _ARCHITECTURE_ALIASES = {
     "amd64": "x86_64",
@@ -42,14 +43,26 @@ def pe_architecture(path: Path) -> str:
 
 
 def elf_architecture(path: Path) -> str:
+    """Machine of a 64-bit ELF executable or shared object, from a validated header.
+
+    Every identification and header field that the machine depends on is checked,
+    so a truncated or malformed file is rejected instead of being read as x86_64.
+    """
     try:
         with path.open("rb") as handle:
-            header = handle.read(20)
-            if len(header) != 20 or header[:4] != b"\x7fELF":
-                raise ValueError
-            if header[4] != 2:  # EI_CLASS; only 64-bit hosts are supported
-                raise ValueError
-            machine = struct.unpack_from("<H" if header[5] == 1 else ">H", header, 18)[0]
+            header = handle.read(_ELF64_HEADER_SIZE)
+        if len(header) != _ELF64_HEADER_SIZE or header[:4] != b"\x7fELF":
+            raise ValueError
+        if header[4] != 2:  # EI_CLASS: only 64-bit hosts are supported
+            raise ValueError
+        order = {1: "<", 2: ">"}.get(header[5])  # EI_DATA
+        if order is None or header[6] != 1:  # EI_VERSION
+            raise ValueError
+        kind, machine, version = struct.unpack_from(order + "HHI", header, 16)
+        header_size = struct.unpack_from(order + "H", header, 52)[0]
+        # ET_EXEC or ET_DYN; relocatable objects and core dumps never load.
+        if kind not in (2, 3) or version != 1 or header_size != _ELF64_HEADER_SIZE:
+            raise ValueError
         return {0x3E: "x86_64", 0xB7: "arm64"}.get(machine, "unknown")
     except (OSError, ValueError, struct.error) as exc:
         raise BridgeError("INVALID_EXECUTABLE", f"Cannot read ELF architecture: {path}") from exc

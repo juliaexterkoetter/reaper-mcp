@@ -1,12 +1,14 @@
 """Atomic installation with a bounded ownership manifest and rollback."""
 
+import errno
 import hashlib
 import os
 import secrets
+import stat
 import sys
 import tempfile
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import Any, Literal
 
@@ -84,34 +86,77 @@ def save_record(record: InstallRecord, home: Path | None = None) -> None:
 def instance_guard(root: Path) -> Iterator[None]:
     path = root / "instance.lock"
     reject_link(path)
-    try:
-        handle = path.open("a+b")
-    except OSError as exc:
-        raise BridgeError(
-            "REAPER_RUNNING", "Close REAPER before installing or uninstalling."
-        ) from exc
-    try:
-        try:
-            if sys.platform == "win32":
-                import msvcrt
+    with _platform_guard(path):
+        yield
 
+
+if sys.platform == "win32":
+    import msvcrt
+
+    @contextmanager
+    def _platform_guard(path: Path) -> Iterator[None]:
+        try:
+            handle = path.open("a+b")
+        except OSError as exc:
+            raise BridgeError(
+                "REAPER_RUNNING", "Close REAPER before installing or uninstalling."
+            ) from exc
+        try:
+            try:
                 handle.seek(0)
                 if not handle.read(1):
                     handle.write(b"0")
                     handle.flush()
                 handle.seek(0)
                 msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
-            else:
-                import fcntl
+            except OSError as exc:
+                raise BridgeError(
+                    "INSTALLER_BUSY", "Another installer owns this resource directory."
+                ) from exc
+            yield
+        finally:
+            handle.close()
 
-                fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+else:
+    import fcntl
+
+    @contextmanager
+    def _platform_guard(path: Path) -> Iterator[None]:
+        """Same protocol as the native extension's lock: one permanent inode, flock.
+
+        The file is never unlinked (see platform.hpp): a contender that already
+        holds a descriptor would otherwise lock an orphaned inode while a newcomer
+        locks a fresh one. Links, FIFOs and devices planted at the path are refused.
+        """
+        flags = os.O_RDWR | os.O_CREAT | os.O_CLOEXEC | os.O_NOFOLLOW | os.O_NONBLOCK
+        try:
+            fd = os.open(path, flags, 0o600)
         except OSError as exc:
-            raise BridgeError(
-                "INSTALLER_BUSY", "Another installer owns this resource directory."
-            ) from exc
-        yield
-    finally:
-        handle.close()
+            if exc.errno == errno.ELOOP:
+                raise BridgeError("UNSAFE_PATH", f"Refusing a symlink lock file: {path}") from exc
+            raise BridgeError("LOCK_FAILED", f"Cannot open the instance lock: {path}") from exc
+        try:
+            opened = os.fstat(fd)
+            if not stat.S_ISREG(opened.st_mode):
+                raise BridgeError("UNSAFE_PATH", f"Instance lock is not a regular file: {path}")
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError as exc:
+                raise BridgeError(
+                    "INSTALLER_BUSY",
+                    "REAPER or another installer is using this resource directory; close it first.",
+                ) from exc
+            try:
+                named = os.lstat(path)
+            except OSError:
+                named = None
+            if named is None or (named.st_dev, named.st_ino) != (opened.st_dev, opened.st_ino):
+                raise BridgeError(
+                    "UNSAFE_PATH", f"Instance lock was replaced while locking: {path}"
+                )
+            yield
+        finally:
+            os.close(fd)
 
 
 def verify_owned(record: InstallRecord) -> None:
@@ -236,7 +281,12 @@ def _uninstall_files(home: Path | None = None) -> bool:
             Path(filename).unlink(missing_ok=True)
         (private / "bridge.json").unlink(missing_ok=True)
         (home / "install.json").unlink()
-    (private / "instance.lock").unlink(missing_ok=True)
+    if sys.platform == "win32":
+        # The native lock deletes itself on close and refuses deletion while held,
+        # so this only removes the installer's leftover file. On POSIX the lock
+        # file is permanent: unlinking it would break exclusion (see _posix_guard).
+        with suppress(OSError):
+            (private / "instance.lock").unlink(missing_ok=True)
     # Do not recursively remove directories: they may contain user files or renders.
     return True
 

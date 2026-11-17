@@ -31,13 +31,15 @@ def pe(path, machine=0x8664):
     return path
 
 
-def elf(path, machine=0x3E):
+def elf(path, machine=0x3E, order="<"):
     path.parent.mkdir(parents=True, exist_ok=True)
     header = bytearray(128)
     header[:4] = b"\x7fELF"
     header[4] = 2  # EI_CLASS: 64-bit
-    header[5] = 1  # EI_DATA: little endian
-    struct.pack_into("<H", header, 18, machine)
+    header[5] = 1 if order == "<" else 2  # EI_DATA
+    header[6] = 1  # EI_VERSION
+    struct.pack_into(order + "HHI", header, 16, 3, machine, 1)  # ET_DYN, e_machine, e_version
+    struct.pack_into(order + "H", header, 52, 64)  # e_ehsize
     path.write_bytes(header)
     return path
 
@@ -73,6 +75,55 @@ def test_elf_rejects_32_bit(tmp_path):
     data = bytearray(path.read_bytes())
     data[4] = 1  # EI_CLASS: 32-bit
     path.write_bytes(data)
+    with pytest.raises(BridgeError, match="INVALID_EXECUTABLE"):
+        elf_architecture(path)
+
+
+def test_elf_big_endian_header(tmp_path):
+    assert elf_architecture(elf(tmp_path / "be.so", 0x3E, order=">")) == "x86_64"
+
+
+def _corrupt(offset, value):
+    def apply(data):
+        data[offset] = value
+        return data
+
+    return apply
+
+
+def _pack(offset, fmt, value):
+    def apply(data):
+        struct.pack_into(fmt, data, offset, value)
+        return data
+
+    return apply
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        pytest.param(_corrupt(5, 0), id="ei-data-none"),
+        pytest.param(_corrupt(5, 3), id="ei-data-invalid"),
+        pytest.param(_corrupt(6, 0), id="ei-version-none"),
+        pytest.param(_pack(20, "<I", 0), id="e-version-none"),
+        pytest.param(_pack(16, "<H", 1), id="relocatable-object"),
+        pytest.param(_pack(16, "<H", 4), id="core-dump"),
+        pytest.param(_pack(52, "<H", 52), id="32-bit-header-size"),
+        pytest.param(lambda data: data[:63], id="truncated-header"),
+        pytest.param(lambda data: data[:20], id="truncated-identification"),
+    ],
+)
+def test_elf_rejects_malformed_headers(tmp_path, mutate):
+    path = elf(tmp_path / "bad.so")
+    path.write_bytes(bytes(mutate(bytearray(path.read_bytes()))))
+    with pytest.raises(BridgeError, match="INVALID_EXECUTABLE"):
+        elf_architecture(path)
+
+
+def test_elf_rejects_reported_20_byte_fixture(tmp_path):
+    """EI_CLASS=2, EI_DATA=0 and e_machine 00 3e was once read as x86_64."""
+    path = tmp_path / "short.so"
+    path.write_bytes(b"\x7fELF\x02\x00" + bytes(12) + b"\x00\x3e")
     with pytest.raises(BridgeError, match="INVALID_EXECUTABLE"):
         elf_architecture(path)
 
