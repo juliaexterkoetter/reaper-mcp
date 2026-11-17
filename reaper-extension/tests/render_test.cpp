@@ -23,6 +23,9 @@ int main(){
     using namespace rmcp;
     base=std::filesystem::temp_directory_path()/("rmcp-render-test-"+std::to_string(rmcp::platform::process_id()));
     std::filesystem::create_directories(base);
+    // Windows runners report the temporary directory with 8.3 short names, which
+    // canonical() expands; path comparisons below need the expanded form.
+    base=std::filesystem::canonical(base);
     EnumProjects=[](int i,char* out,int size)->ReaProject*{
         auto path=(base/"test.rpp").u8string();
         if(out && size>static_cast<int>(path.size()))std::strcpy(out,path.c_str());
