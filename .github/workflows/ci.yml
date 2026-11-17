@@ -46,6 +46,18 @@ jobs:
           test -f dist/native/reaper_mcp.so
           exported=$(nm -D --defined-only dist/native/reaper_mcp.so | awk '$2=="T"{print $3}')
           test "$exported" = "ReaperPluginEntry" || { echo "unexpected exports: $exported"; exit 1; }
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: python -m pip install -c packaging/constraints.txt -e ".[dev]"
+      # The installer and the extension must agree on one lock inode. These run
+      # the Python installer against the real native lock in separate processes.
+      - name: Lock exclusion between the installer and the native extension
+        run: pytest -q -rs tests/unit/test_instance_lock.py
+        env:
+          RMCP_PLATFORM_TEST: ${{ github.workspace }}/build/extension/platform_test
+      - name: Linux installation lifecycle (real module, synthetic REAPER executable)
+        run: python scripts/smoke_linux_install.py dist/native/reaper_mcp.so build/extension/platform_test
       - uses: actions/upload-artifact@v4
         with:
           name: reaper-mcp-native-linux-x86_64
