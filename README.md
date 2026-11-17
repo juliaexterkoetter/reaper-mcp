@@ -6,8 +6,10 @@ No ReaScript installation, web server, audio upload, or Python installation is
 required when using the standalone Windows installer.
 
 **Status: 0.1.0-alpha.1.** Automated Python, native and packaging tests are provided.
-Real REAPER + Codex + third-party plugin acceptance must still be verified on a
-Windows workstation. Do not treat this alpha as a production-certified DAW tool.
+Local MCP acceptance on REAPER 7.84/x64 has exercised project edits and isolated
+WAV rendering. Coverage is limited to disposable synthetic audio and Cockos
+ReaEQ; broader plugin, client and clean-machine installer acceptance remains
+outstanding. Do not treat this alpha as a production-certified DAW tool.
 
 [Releases](https://github.com/juliaexterkoetter/reaper-mcp/releases) ·
 [CI](https://github.com/juliaexterkoetter/reaper-mcp/actions) ·

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Fix isolated rendering on REAPER 7.84 when the single target list ends in a
+  semicolon; retain rejection of empty/multiple targets, outside destinations
+  and existing files.
+- Restore the original render sample rate after the host action resolves an
+  automatic rate, including failure paths; extend native isolation regressions.
+- Document limited local real-host validation without changing alpha status or
+  claiming general plugin, audio-quality or clean-machine installer acceptance.
+
 ## 0.1.0-alpha.1 — 2026-09-17
 
 Initial public Windows x64 alpha targeting REAPER 7.80+.

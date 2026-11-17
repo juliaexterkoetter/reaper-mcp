@@ -1,6 +1,7 @@
 # Architecture
 
-Status: implemented alpha; Windows x64 is the initial target. Real host acceptance remains outstanding.
+Status: implemented alpha; Windows x64 is the initial target. Limited local
+acceptance has run on REAPER 7.84/x64; see VALIDATION.md for scope.
 
 ```mermaid
 flowchart LR
