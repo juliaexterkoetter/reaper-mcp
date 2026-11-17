@@ -20,6 +20,17 @@ inline json render_settings(ReaProject* proj) {
         {"pattern",project_string(proj,"RENDER_PATTERN")}};
 }
 inline json render_job={{"state","idle"}};
+// Locality check for render destinations. Tests replace it to present remote or
+// unidentifiable filesystems that a build machine does not have.
+inline std::function<platform::Storage(const std::filesystem::path&)> render_storage=
+    [](const std::filesystem::path& path){return platform::classify_storage(path);};
+inline void require_local(const std::filesystem::path& path,const char* stage) {
+    switch(render_storage(path)){
+    case platform::Storage::local: return;
+    case platform::Storage::remote: throw Error("INVALID_PATH",std::string(stage)+" is on a network filesystem; choose a local directory");
+    default: throw Error("INVALID_PATH",std::string(stage)+" is on a filesystem that cannot be verified as local; choose a local directory");
+    }
+}
 inline json pending_render;
 inline void validate_render(ReaProject* proj) {
     int settings=static_cast<int>(GetSetProjectInfo(proj,"RENDER_SETTINGS",0,false));
@@ -86,11 +97,11 @@ inline void add_render_operations() {
         if(p.contains("output_directory") && !p.at("output_directory").is_null()) parent=std::filesystem::u8path(text(p,"output_directory",32700));
         else {auto configured=project_string(proj,"RENDER_FILE");parent=configured.empty()?std::filesystem::path("renders"):std::filesystem::u8path(configured);
             if(parent.is_relative())parent=std::filesystem::u8path(path).parent_path()/parent;}
-        if(!parent.is_absolute() || platform::is_network_path(parent))
-            throw Error("INVALID_PATH","Render output must be an absolute local filesystem directory");
+        if(!parent.is_absolute())throw Error("INVALID_PATH","Render output must be an absolute local filesystem directory");
+        // Checked before anything is created, then again once links are resolved.
+        require_local(parent,"Render output");
         std::filesystem::create_directories(parent);parent=std::filesystem::canonical(parent);
-        if(platform::is_network_path(parent))
-            throw Error("INVALID_PATH","Resolved render output must remain on a local filesystem");
+        require_local(parent,"Resolved render output");
         auto name="reaper-mcp-"+std::to_string(platform::process_id())+"-"+std::to_string(platform::tick_count());auto root=parent/name;
         if(!std::filesystem::create_directory(root))throw Error("OUTPUT_EXISTS","Output reservation failed; inspect before retrying");
         render_job={{"state","queued"},{"job_id",name},{"output_directory",root.u8string()}};pending_render=p;return render_job;

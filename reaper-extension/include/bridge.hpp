@@ -26,7 +26,7 @@ class Bridge {
     platform::socket_t listener = platform::invalid_socket;
     platform::lock_t instance_lock = platform::invalid_lock;
     std::vector<Peer> peers;
-    std::filesystem::path discovery, lock_path;
+    std::filesystem::path discovery;
     std::string token;
     bool networking = false;
 public:
@@ -43,8 +43,7 @@ public:
             std::filesystem::remove(discovery, ec);
             discovery.clear();
         }
-        platform::release_lock(instance_lock, lock_path);
-        lock_path.clear();
+        platform::release_lock(instance_lock);
         if (networking) platform::cleanup();
         networking = false;
     }
@@ -58,8 +57,10 @@ public:
             throw Error("INVALID_CONFIGURATION", "Invalid configuration");
         // A single exclusive lock serializes instances and installers. The OS
         // releases it after crashes, so stale discovery can safely be replaced.
-        lock_path = root / "instance.lock";
-        instance_lock = platform::acquire_lock(lock_path);
+        platform::LockFailure failure{};
+        instance_lock = platform::acquire_lock(root / "instance.lock", &failure);
+        if (failure == platform::LockFailure::unsafe)
+            throw Error("UNSAFE_PATH", "instance.lock is not a regular file; inspect the resource directory");
         if (instance_lock == platform::invalid_lock)
             throw Error("INSTANCE_CONFLICT", "Another REAPER instance or installer owns this resource directory");
         std::error_code ec;
