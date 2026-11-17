@@ -21,8 +21,11 @@ void restored(){
 }
 int main(){
     using namespace rmcp;
-    base=std::filesystem::temp_directory_path()/("rmcp-render-test-"+std::to_string(GetCurrentProcessId()));
+    base=std::filesystem::temp_directory_path()/("rmcp-render-test-"+std::to_string(rmcp::platform::process_id()));
     std::filesystem::create_directories(base);
+    // Windows runners report the temporary directory with 8.3 short names, which
+    // canonical() expands; path comparisons below need the expanded form.
+    base=std::filesystem::canonical(base);
     EnumProjects=[](int i,char* out,int size)->ReaProject*{
         auto path=(base/"test.rpp").u8string();
         if(out && size>static_cast<int>(path.size()))std::strcpy(out,path.c_str());
@@ -87,6 +90,34 @@ int main(){
         original_rate=sample_rate=48000;run("terminated","",true);
         create_output=false;run("terminated","RENDER_FAILED",true);
         create_output=true;fail_action=true;run("terminated","RENDER_FAILED",true);
+        // Remote and unidentifiable destinations are refused by render.start
+        // itself: nothing is created, queued or rendered. The classifier is
+        // keyed on paths here because the build machine has no such mounts.
+        auto remote=base/"remote-mount",unknown=base/"unknown-mount",local=base/"local";
+        std::filesystem::create_directories(remote);std::filesystem::create_directories(local);
+        render_storage=[&](const std::filesystem::path& path){
+            auto text=path.lexically_normal().u8string();
+            if(text.rfind(remote.u8string(),0)==0)return platform::Storage::remote;
+            if(text.rfind(unknown.u8string(),0)==0)return platform::Storage::unknown;
+            return platform::Storage::local;};
+        auto refuse=[&](const std::filesystem::path& dir,const std::filesystem::path& untouched,const char* what){
+            json args={{"project_id",project_ids.begin()->second},{"confirm",true},{"output_directory",dir.u8string()}};
+            const int before=render_calls;auto previous=render_job;
+            try{dispatch("render.start",args,"confirm-destructive");require(false,what);}
+            catch(const Error& e){require(e.code=="INVALID_PATH",what);}
+            require(pending_render.is_null() && render_calls==before && render_job==previous,what);
+            require(!std::filesystem::exists(untouched),what);
+        };
+        refuse(remote/"renders",remote/"renders","remote destination accepted or created");
+        refuse(unknown/"renders",unknown,"unknown destination accepted or created");
+        // A local-looking path whose link resolves onto the remote mount is caught
+        // after resolution, before the job directory is reserved.
+        std::error_code ec;std::filesystem::create_directory_symlink(remote,local/"link",ec);
+        if(!ec){
+            refuse(local/"link",remote/"reaper-mcp-placeholder","resolved remote destination accepted");
+            require(std::filesystem::is_empty(remote),"output reserved on the resolved remote destination");
+        }else std::cout<<"  resolved-link case not exercised: "<<ec.message()<<'\n';
+        render_storage=[](const std::filesystem::path& path){return platform::classify_storage(path);};
         std::ofstream(base/"voice.RfxChain")<<"test fixture";
         auto presets=resource_files(base,".rfxchain");
         require(presets.at("files").size()==1 && presets.at("read_error")==false,"preset discovery failed");

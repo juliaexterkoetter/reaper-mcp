@@ -7,7 +7,8 @@ that was not executed.
 ## Architecture
 
 Python uses the official MCP SDK over stdio. Stdout is protocol-only while
-serving. Native C++ is a Windows x64 REAPER extension; API calls run exclusively
+serving. Native C++ is a REAPER extension for Windows x64 and Linux x86_64, with
+per-platform primitives confined to platform.hpp; API calls run exclusively
 on the main-thread timer. Bridge methods are explicit allowlisted capabilities.
 Mocks, synthetic PE files and substituted SDK functions belong only in tests.
 
@@ -21,8 +22,8 @@ Do not introduce arbitrary command/action execution or a remote listener.
 
 Run `ruff check src tests scripts`, `ruff format --check src tests scripts`,
 `mypy src`, `pytest -q`, and `python -m build` as applicable. Local socket tests
-need an environment that permits loopback sockets. Native validation is Windows
-MSVC + CTest; use CI when developing on Linux. Packaging changes require the
+need an environment that permits loopback sockets. Native validation is MSVC +
+CTest on Windows and GCC/Clang + CTest on Linux. Packaging changes require the
 frozen MCP and Setup lifecycle smoke tests. Real host E2E is opt-in and must
 remain explicitly distinguishable from test fixtures.
 

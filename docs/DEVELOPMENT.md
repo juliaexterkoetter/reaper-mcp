@@ -1,6 +1,7 @@
 # Development
 
-Python 3.11+ (tested versions are in CI), Windows x64 REAPER 7.80+ for runtime.
+Python 3.11+ (tested versions are in CI), and REAPER 7.80+ for runtime on
+Windows x64 or Linux x86_64.
 
 ```
 python -m venv .venv
@@ -21,10 +22,34 @@ cmake --build build/extension --config Release
 cmake --install build/extension --config Release --prefix dist/native
 ```
 
+Native Linux: install CMake, Git and a C++17 compiler. WDL is fetched alongside
+the SDK because reaper_plugin.h includes SWELL's headers outside Win32.
+
+```
+cmake -S reaper-extension -B build/extension -DCMAKE_BUILD_TYPE=Release
+cmake --build build/extension --parallel
+cmake --install build/extension --prefix dist/native
+```
+
+The module must be named reaper_mcp.so and export only ReaperPluginEntry; the
+Linux CI job checks both, because a mismatch only surfaces when REAPER fails to
+load the extension. The same job runs `tests/unit/test_instance_lock.py` with
+`RMCP_PLATFORM_TEST` pointing at the built `platform_test`, so the Python installer
+is checked against the real native lock in separate processes, and
+`scripts/smoke_linux_install.py`, an install/reinstall/uninstall lifecycle with
+the built module and a synthetic REAPER executable (a fixture, not host
+acceptance). Locally:
+
+```
+RMCP_PLATFORM_TEST=$PWD/build/extension/platform_test pytest -q tests/unit/test_instance_lock.py
+python scripts/smoke_linux_install.py dist/native/reaper_mcp.so build/extension/platform_test
+```
+
 SDK and nlohmann JSON are fetched by immutable commit; their notices ship with
 native artifacts. We only use the permissively licensed SDK headers, not the
 sample plugins' implementation code. Windows/MSVC CI is authoritative for DLL
-builds. A compile pass does not validate REAPER runtime behavior.
+builds and Linux CI for .so builds. A compile pass does not validate REAPER
+runtime behavior.
 
 Run `ctest --test-dir build/extension -C Release --output-on-failure` for native
 fixture tests. Frozen binary and Setup smoke tests run via
