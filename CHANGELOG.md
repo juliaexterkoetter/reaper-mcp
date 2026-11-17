@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Fix isolated rendering on REAPER 7.84 when the single target list ends in a
+  semicolon; retain rejection of empty/multiple targets, outside destinations
+  and existing files.
+- Restore the original render sample rate after the host action resolves an
+  automatic rate, including failure paths; extend native isolation regressions.
+- Document limited local real-host validation without changing alpha status or
+  claiming general plugin, audio-quality or clean-machine installer acceptance.
 - Linux x86_64 support. The native extension builds as `reaper_mcp.so`, with the
   Win32 socket, locking, link and network-filesystem primitives moved behind
   `platform.hpp`; writes now pass `MSG_NOSIGNAL`, which on POSIX prevents a peer

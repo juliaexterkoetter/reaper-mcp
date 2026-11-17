@@ -1,0 +1,11 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.juliaexterkoetter/reaper-mcp",
+  "title": "REAPER MCP",
+  "description": "Local MCP control of REAPER through a native extension",
+  "version": "0.1.0-alpha.1",
+  "repository": {
+    "url": "https://github.com/juliaexterkoetter/reaper-mcp",
+    "source": "github"
+  }
+}

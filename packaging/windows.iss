@@ -1,4 +1,6 @@
+#ifndef AppVersion
 #define AppVersion "0.1.0-alpha.1"
+#endif
 [Setup]
 AppId={{7C563B9B-458B-47FB-B778-838B125CBE13}
 AppName=REAPER MCP
